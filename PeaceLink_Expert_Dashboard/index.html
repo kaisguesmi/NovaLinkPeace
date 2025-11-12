@@ -1,0 +1,452 @@
+ <!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeaceLink - Tableau de Bord Expert</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <img src="logo-peacelink.png" alt="PeaceLink Logo">
+                <span class="logo-text">PeaceLink</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span>Tableau de bord</span>
+            </a>
+            <a href="#" class="nav-item" data-page="initiatives">
+                <i class="fas fa-hands-helping"></i>
+                <span>Mes Initiatives</span>
+                <span class="badge orange">3</span>
+            </a>
+            <a href="#" class="nav-item" data-page="participants">
+                <i class="fas fa-users"></i>
+                <span>Participants</span>
+            </a>
+            <a href="#" class="nav-item" data-page="messaging">
+                <i class="fas fa-comments"></i>
+                <span>Messagerie</span>
+                <span class="badge orange">5</span>
+            </a>
+            <a href="#" class="nav-item" data-page="stories">
+                <i class="fas fa-book-open"></i>
+                <span>Histoires</span>
+            </a>
+            <a href="#" class="nav-item" data-page="profile">
+                <i class="fas fa-user-circle"></i>
+                <span>Mon Profil</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar"><i class="fas fa-user-tie"></i></div>
+                <div class="user-info">
+                    <span class="user-name">Votre Nom Expert</span>
+                    <span class="user-role">Expert</span>
+                </div>
+            </div>
+            <button class="logout-btn" title="Se déconnecter"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+                <h2 class="page-title">Tableau de bord</h2>
+            </div>
+            <div class="topbar-right">
+                <button class="icon-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-dot"></span>
+                </button>
+                <button class="icon-btn" title="Paramètres">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="content-wrapper" id="content-container">
+            <!-- DASHBOARD PAGE -->
+            <section id="dashboard-page" class="page-content active">
+                <div class="page-header">
+                    <div>
+                        <h1>Tableau de bord</h1>
+                        <p class="page-subtitle">Aperçu rapide de vos activités et initiatives.</p>
+                    </div>
+                    <button class="btn btn-primary" data-modal="create-initiative-modal"><i class="fas fa-plus-circle"></i> Créer une initiative</button>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="fas fa-hands-helping"></i></div>
+                        <div>
+                            <div class="stat-label">Initiatives actives</div>
+                            <div class="stat-value">3</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="fas fa-users"></i></div>
+                        <div>
+                            <div class="stat-label">Participants totaux</div>
+                            <div class="stat-value">45</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fas fa-comments"></i></div>
+                        <div>
+                            <div class="stat-label">Nouveaux messages</div>
+                            <div class="stat-value">5</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>
+                            <div class="stat-label">Histoires en attente</div>
+                            <div class="stat-value">1</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Participation aux initiatives</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="participationChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Types d'initiatives</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="initiativeTypesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- INITIATIVES PAGE -->
+            <section id="initiatives-page" class="page-content">
+                <div class="page-header">
+                    <div>
+                        <h1>Mes Initiatives</h1>
+                        <p class="page-subtitle">Gérez vos initiatives et suivez leur progression.</p>
+                    </div>
+                    <button class="btn btn-primary" data-modal="create-initiative-modal"><i class="fas fa-plus-circle"></i> Créer une initiative</button>
+                </div>
+                <div class="table-card">
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Titre de l'initiative</th>
+                                    <th>Date</th>
+                                    <th>Lieu</th>
+                                    <th>Statut</th>
+                                    <th>Participants</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Atelier de médiation</td>
+                                    <td>2023-12-15</td>
+                                    <td>Tunis</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td>12</td>
+                                    <td class="actions-cell">
+                                        <button class="action-btn" title="Modifier"><i class="fas fa-edit"></i></button>
+                                        <button class="action-btn" title="Voir participants"><i class="fas fa-users"></i></button>
+                                        <button class="action-btn danger" title="Supprimer"><i class="fas fa-trash-alt"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Campagne de nettoyage</td>
+                                    <td>2024-01-20</td>
+                                    <td>Sousse</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td>25</td>
+                                    <td class="actions-cell">
+                                        <button class="action-btn" title="Modifier"><i class="fas fa-edit"></i></button>
+                                        <button class="action-btn" title="Voir participants"><i class="fas fa-users"></i></button>
+                                        <button class="action-btn danger" title="Supprimer"><i class="fas fa-trash-alt"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Débat sur l'inclusion</td>
+                                    <td>2023-11-01</td>
+                                    <td>Sfax</td>
+                                    <td><span class="status-badge inactive">Terminée</span></td>
+                                    <td>8</td>
+                                    <td class="actions-cell">
+                                        <button class="action-btn" title="Détails"><i class="fas fa-info-circle"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PARTICIPANTS PAGE -->
+            <section id="participants-page" class="page-content">
+                <div class="page-header">
+                    <h1>Participants</h1>
+                    <p class="page-subtitle">Gérez les participants à vos initiatives.</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom du participant</th>
+                                    <th>Initiative</th>
+                                    <th>Date d'inscription</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="user-cell">
+                                        <div class="user-cell-avatar">A</div>
+                                        Ahmed Ben Ali
+                                    </td>
+                                    <td>Atelier de médiation</td>
+                                    <td>2023-11-20</td>
+                                    <td><span class="status-badge active">Confirmé</span></td>
+                                    <td class="actions-cell">
+                                        <button class="action-btn" title="Envoyer message"><i class="fas fa-envelope"></i></button>
+                                        <button class="action-btn danger" title="Retirer"><i class="fas fa-user-minus"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="user-cell">
+                                        <div class="user-cell-avatar">F</div>
+                                        Fatma Gharbi
+                                    </td>
+                                    <td>Campagne de nettoyage</td>
+                                    <td>2024-01-05</td>
+                                    <td><span class="status-badge active">Confirmé</span></td>
+                                    <td class="actions-cell">
+                                        <button class="action-btn" title="Envoyer message"><i class="fas fa-envelope"></i></button>
+                                        <button class="action-btn danger" title="Retirer"><i class="fas fa-user-minus"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="user-cell">
+                                        <div class="user-cell-avatar">K</div>
+                                        Kais Bouzid
+                                    </td>
+                                    <td>Atelier de médiation</td>
+                                    <td>2023-12-01</td>
+                                    <td><span class="status-badge active">Confirmé</span></td>
+                                    <td class="actions-cell">
+                                        <button class="action-btn" title="Envoyer message"><i class="fas fa-envelope"></i></button>
+                                        <button class="action-btn danger" title="Retirer"><i class="fas fa-user-minus"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MESSAGING PAGE -->
+            <section id="messaging-page" class="page-content">
+                <div class="page-header">
+                    <h1>Messagerie</h1>
+                    <p class="page-subtitle">Communiquez avec les utilisateurs et les participants.</p>
+                </div>
+                <div class="chart-card" style="height: 500px; display: flex; align-items: center; justify-content: center; color: #888;">
+                    <i class="fas fa-inbox fa-3x" style="margin-right: 20px;"></i>
+                    <span>Boîte de réception vide pour le moment.</span>
+                </div>
+            </section>
+
+            <!-- STORIES PAGE -->
+            <section id="stories-page" class="page-content">
+                <div class="page-header">
+                    <div>
+                        <h1>Histoires</h1>
+                        <p class="page-subtitle">Partagez vos histoires et validez les contributions des utilisateurs.</p>
+                    </div>
+                    <button class="btn btn-primary"><i class="fas fa-plus-circle"></i> Publier une histoire</button>
+                </div>
+                <div class="stories-grid">
+                    <div class="story-card" data-story-id="1">
+                        <div class="story-header">
+                            <span>Par: Jean Dupont</span>
+                            <span>2023-12-10</span>
+                        </div>
+                        <div class="story-content">
+                            <h3>Un acte de gentillesse inattendu</h3>
+                            <p>J'ai été témoin d'un moment incroyable aujourd'hui. Un jeune homme a aidé une personne âgée à porter ses courses...</p>
+                        </div>
+                        <div class="story-actions">
+                            <button class="btn btn-secondary"><i class="fas fa-eye"></i> Voir</button>
+                            <button class="btn btn-success"><i class="fas fa-check"></i> Approuver</button>
+                            <button class="btn btn-danger"><i class="fas fa-times"></i> Rejeter</button>
+                        </div>
+                    </div>
+                    <div class="story-card" data-story-id="2">
+                        <div class="story-header">
+                            <span>Par: Sophie Martin</span>
+                            <span>2023-12-08</span>
+                        </div>
+                        <div class="story-content">
+                            <h3>Ensemble pour l'environnement</h3>
+                            <p>Notre initiative de nettoyage de quartier a été un succès retentissant. Nous avons ramassé plus de 50 kg de déchets...</p>
+                        </div>
+                        <div class="story-actions">
+                            <button class="btn btn-secondary"><i class="fas fa-eye"></i> Voir</button>
+                            <button class="btn btn-success"><i class="fas fa-check"></i> Approuver</button>
+                            <button class="btn btn-danger"><i class="fas fa-times"></i> Rejeter</button>
+                        </div>
+                    </div>
+                    <div class="story-card" data-story-id="3">
+                        <div class="story-header">
+                            <span>Par: Anonyme</span>
+                            <span>2023-12-05</span>
+                        </div>
+                        <div class="story-content">
+                            <h3>Message de gratitude</h3>
+                            <p>Je voulais juste remercier les organisateurs de l'atelier de médiation. Cela a vraiment fait une différence...</p>
+                        </div>
+                        <div class="story-report-details">
+                            <p><i class="fas fa-exclamation-circle"></i> Cette histoire a été signalée pour contenu inapproprié.</p>
+                            <p>Motif: Langage offensant.</p>
+                        </div>
+                        <div class="story-actions">
+                            <button class="btn btn-secondary"><i class="fas fa-search"></i> Examiner</button>
+                            <button class="btn btn-danger"><i class="fas fa-trash-alt"></i> Supprimer</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PROFILE PAGE -->
+            <section id="profile-page" class="page-content">
+                <div class="page-header">
+                    <h1>Mon Profil Expert</h1>
+                    <p class="page-subtitle">Gérez vos informations personnelles et professionnelles.</p>
+                </div>
+                <div class="profile-card">
+                    <form>
+                        <div class="profile-grid">
+                            <div class="profile-avatar-wrapper">
+                                <div class="profile-avatar" id="avatar-preview">
+                                    <img src="https://via.placeholder.com/150/5DADE2/FFFFFF?text=EX" alt="Avatar de l'expert">
+                                    <div class="profile-avatar-overlay">
+                                        <i class="fas fa-camera fa-2x"></i>
+                                        <span>Changer</span>
+                                    </div>
+                                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                                </div>
+                            </div>
+                            <div class="profile-fields">
+                                <div class="form-group">
+                                    <label for="full-name">Nom complet</label>
+                                    <input type="text" id="full-name" value="Votre Nom Expert" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" id="email" value="expert@peacelink.com" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="role">Rôle</label>
+                                    <input type="text" id="role" value="Expert" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="specialty">Spécialité</label>
+                                    <input type="text" id="specialty" value="Médiation Communautaire">
+                                </div>
+                                <div class="form-group">
+                                    <label for="organization">Organisation</label>
+                                    <input type="text" id="organization" value="Association Pour la Paix">
+                                </div>
+                                <div class="form-group">
+                                    <label for="bio">Biographie</label>
+                                    <textarea id="bio" rows="4">Passionné par la construction de ponts entre les communautés et la promotion du dialogue. J'anime des ateliers et des initiatives pour un monde plus inclusif.</textarea>
+                                </div>
+                                <h3 class="form-subtitle">Changer le mot de passe</h3>
+                                <div class="form-group">
+                                    <label for="current-password">Mot de passe actuel</label>
+                                    <input type="password" id="current-password">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">Nouveau mot de passe</label>
+                                    <input type="password" id="new-password">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-password">Confirmer le nouveau mot de passe</label>
+                                    <input type="password" id="confirm-password">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Enregistrer les modifications</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Modals (pop-ups) -->
+    <div id="create-initiative-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Créer une nouvelle initiative</h2>
+            <form id="create-initiative-form">
+                <div class="form-group">
+                    <label for="initiative-title">Titre de l'initiative</label>
+                    <input type="text" id="initiative-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="initiative-description">Description</label>
+                    <textarea id="initiative-description" rows="5" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="initiative-date">Date</label>
+                    <input type="date" id="initiative-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="initiative-location">Lieu</label>
+                    <input type="text" id="initiative-location" required>
+                </div>
+                <div class="form-group">
+                    <label for="initiative-category">Catégorie</label>
+                    <select id="initiative-category" required>
+                        <option value="">Sélectionner une catégorie</option>
+                        <option value="paix">Paix</option>
+                        <option value="inclusion">Inclusion</option>
+                        <option value="environnement">Environnement</option>
+                        <option value="education">Éducation</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="initiative-image">Image de couverture</label>
+                    <input type="file" id="initiative-image" accept="image/*">
+                </div>
+                <div class="form-actions" style="justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary close-button">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Soumettre pour validation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
