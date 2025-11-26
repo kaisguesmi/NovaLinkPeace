@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Complaint</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Submit a Complaint</h1>
+        <form id="complaintForm">
+            <!-- Simulating logged in user ID -->
+            <input type="hidden" name="author_id" value="1">
+
+            <label for="target_type">Complaint About:</label>
+            <select name="target_type" id="target_type" required>
+                <option value="story">Story</option>
+                <option value="comment">Comment</option>
+            </select>
+
+            <label for="target_id">Target ID:</label>
+            <input type="number" name="target_id" id="target_id" placeholder="ID of the story or comment" required>
+
+            <label for="reason">Reason:</label>
+            <textarea name="reason" id="reason" placeholder="Describe your complaint..." required></textarea>
+
+            <button type="submit">Submit Complaint</button>
+        </form>
+        <div id="message"></div>
+        <p style="text-align: center; margin-top: 20px;">
+            <a href="dashboard.html">Go to Admin Dashboard</a>
+        </p>
+    </div>
+    <script src="assets/script.js"></script>
+</body>
+
+</html>

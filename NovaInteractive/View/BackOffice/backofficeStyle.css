@@ -1,0 +1,521 @@
+/* --- 1. Importations et Variables --- */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&family=Poppins:wght@600;700&display=swap');
+
+:root {
+    --bleu-pastel: #5DADE2;
+    --vert-doux: #7BD389;
+    --orange-chaud: #F4A261;
+    --blanc-pur: #FFFFFF;
+    --gris-clair: #f4f6f9;
+    --gris-moyen: #e9ecef;
+    --gris-fonce: #333333;
+    --bleu-nuit: #1B263B;
+    --rouge-alerte: #E74C3C;
+    --violet-admin: #8E44AD;
+    --font-titre: 'Poppins', sans-serif;
+    --font-texte: 'Open Sans', sans-serif;
+    --sidebar-width: 260px;
+    --sidebar-width-collapsed: 80px;
+    --topbar-height: 70px;
+    --border-radius: 12px;
+    --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    --transition-speed: 0.3s ease;
+}
+
+/* --- 2. Styles de base et Reset --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font-texte); background-color: var(--gris-clair); color: var(--gris-fonce); font-size: 16px; line-height: 1.6; }
+a { text-decoration: none; color: inherit; }
+
+/* ... (toutes les sections 3 à 11 de votre CSS restent identiques) ... */
+
+/* --- 3. Layout Principal --- */
+.sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100%; background-color: var(--blanc-pur); display: flex; flex-direction: column; border-right: 1px solid var(--gris-moyen); transition: width var(--transition-speed); z-index: 1000; }
+.main-content { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); transition: margin-left var(--transition-speed), width var(--transition-speed); }
+
+/* --- 4. Barre latérale (Sidebar) --- */
+.sidebar-header { padding: 0 20px; display: flex; align-items: center; border-bottom: 1px solid var(--gris-moyen); min-height: var(--topbar-height); }
+.sidebar-header .logo { display: flex; align-items: center; justify-content: flex-start; }
+.sidebar-header .logo img { max-height:50px; width: auto; transition: all var(--transition-speed); }
+.sidebar-nav { flex-grow: 1; padding: 20px 10px; overflow-y: auto; }
+.nav-item { display: flex; align-items: center; padding: 12px 20px; margin-bottom: 5px; border-radius: 8px; color: #555; font-weight: 600; cursor: pointer; transition: background-color var(--transition-speed), color var(--transition-speed); }
+.nav-item i { width: 25px; margin-right: 15px; font-size: 18px; text-align: center; }
+.nav-item:hover { background-color: var(--gris-clair); color: var(--bleu-pastel); }
+.nav-item.active { background-color: var(--bleu-pastel); color: var(--blanc-pur); box-shadow: 0 4px 8px rgba(93, 173, 226, 0.3); }
+.badge { margin-left: auto; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+.badge.orange { background-color: var(--orange-chaud); color: white; }
+.nav-item.active .badge { background-color: var(--blanc-pur); color: var(--bleu-pastel); }
+.sidebar-footer { padding: 10px; border-top: 1px solid var(--gris-moyen); display: flex; align-items: center; justify-content: space-between; }
+.user-profile { display: flex; align-items: center; flex-grow: 1; padding: 10px; margin-right: 10px; border-radius: 8px; cursor: pointer; transition: background-color var(--transition-speed); }
+.user-profile:hover { background-color: var(--gris-clair); }
+.user-avatar { font-size: 20px; margin-right: 10px; }
+.user-info { display: flex; flex-direction: column; white-space: nowrap; overflow: hidden; }
+.user-name { font-weight: 700; }
+.user-role { font-size: 12px; color: #888; }
+.logout-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #888; transition: color var(--transition-speed); flex-shrink: 0; padding: 10px; border-radius: 8px; }
+.logout-btn:hover { color: var(--rouge-alerte); background-color: var(--gris-clair); }
+
+/* --- 5. Barre Supérieure (Topbar) --- */
+.topbar { height: var(--topbar-height); background-color: var(--blanc-pur); padding: 0 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gris-moyen); }
+.topbar-left { display: flex; align-items: center; }
+.menu-toggle { background: none; border: none; font-size: 22px; cursor: pointer; margin-right: 20px; color: var(--gris-fonce); }
+.topbar-right { display: flex; align-items: center; gap: 15px; }
+.icon-btn { background: none; border: none; font-size: 20px; cursor: pointer; position: relative; color: #555; }
+.notification-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background-color: var(--rouge-alerte); border-radius: 50%; border: 1px solid var(--blanc-pur); }
+
+/* --- 6. Contenu Principal et Boutons --- */
+.content-wrapper { padding: 30px; }
+.page-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 30px; }
+.page-header h1 { font-family: var(--font-titre); font-size: 28px; color: var(--bleu-nuit); }
+.page-subtitle { color: #888; }
+.btn, .btn-primary { padding: 10px 20px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
+.btn-primary { background-color: var(--bleu-pastel); color: var(--blanc-pur); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(93, 173, 226, 0.4); }
+.btn-secondary { background-color: var(--gris-moyen); color: var(--gris-fonce); }
+.btn-secondary:hover { background-color: #d1d5db; }
+.btn-success { background-color: var(--vert-doux); color: var(--blanc-pur); }
+.btn-success:hover { background-color: #68c37a; }
+.btn-danger { background-color: var(--rouge-alerte); color: var(--blanc-pur); }
+.btn-danger:hover { background-color: #e23c28; }
+
+/* --- 7. Cartes et Grilles (Tableau de bord) --- */
+.stats-grid, .charts-grid { display: grid; gap: 25px; margin-bottom: 25px; }
+.stats-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.charts-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.stat-card, .chart-card, .table-card, .profile-card { background-color: var(--blanc-pur); padding: 25px; border-radius: var(--border-radius); box-shadow: var(--card-shadow); }
+.stat-card { display: flex; align-items: center; }
+.stat-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--blanc-pur); margin-right: 20px; flex-shrink: 0; }
+.stat-icon.blue { background-color: var(--bleu-pastel); }
+.stat-icon.green { background-color: var(--vert-doux); }
+.stat-icon.orange { background-color: var(--orange-chaud); }
+.stat-icon.red { background-color: var(--rouge-alerte); }
+.stat-label { font-size: 14px; color: #888; }
+.stat-value { font-family: var(--font-titre); font-size: 26px; margin: 5px 0; }
+.chart-header { margin-bottom: 20px; }
+.chart-header h3 { font-family: var(--font-titre); }
+.chart-body { height: 300px; position: relative; }
+
+/* --- 8. Page Histoires --- */
+.stories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; }
+.story-card { background-color: var(--blanc-pur); border-radius: var(--border-radius); box-shadow: var(--card-shadow); padding: 25px; display: flex; flex-direction: column; transition: transform 0.3s ease, opacity 0.3s ease; }
+.story-header { display: flex; justify-content: space-between; font-size: 14px; color: #888; margin-bottom: 15px; border-bottom: 1px solid var(--gris-moyen); padding-bottom: 10px; }
+.story-content h3 { font-family: var(--font-titre); margin-bottom: 10px; color: var(--bleu-nuit); }
+.story-content p { font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
+.story-report-details { background-color: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.2); border-radius: 8px; padding: 15px; margin-top: auto; margin-bottom: 20px; }
+.story-report-details p { margin: 0 0 5px 0; font-size: 14px; color: #555; }
+.story-report-details i { margin-right: 8px; color: var(--rouge-alerte); }
+.story-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.story-card.is-hidden { opacity: 0; transform: scale(0.95); }
+
+/* --- 9. Page Utilisateurs (Tableau) --- */
+.table-wrapper { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th, .data-table td { padding: 15px; text-align: left; border-bottom: 1px solid var(--gris-moyen); vertical-align: middle; }
+.data-table th { font-family: var(--font-titre); font-size: 14px; color: #888; text-transform: uppercase; white-space: nowrap; }
+.user-cell { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.user-cell-avatar { width: 35px; height: 35px; border-radius: 50%; background-color: var(--bleu-pastel); color: var(--blanc-pur); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+.status-badge, .role-badge { padding: 4px 12px; border-radius: 20px; font-weight: 600; font-size: 12px; }
+.status-badge.active { background-color: rgba(123, 211, 137, 0.2); color: var(--vert-doux); }
+.status-badge.inactive { background-color: rgba(150, 150, 150, 0.2); color: #888; }
+.role-badge.admin { background-color: rgba(142, 68, 173, 0.2); color: var(--violet-admin); }
+.role-badge.expert { background-color: rgba(93, 173, 226, 0.2); color: var(--bleu-pastel); }
+.role-badge.user { background-color: rgba(150, 150, 150, 0.2); color: #555; }
+.actions-cell { display: flex; gap: 10px; }
+.action-btn { font-size: 18px; cursor: pointer; color: #888; background: none; border: none; transition: transform 0.2s, color 0.2s; }
+.action-btn:hover { transform: scale(1.2); color: var(--bleu-nuit); }
+.action-btn.danger:hover { color: var(--rouge-alerte); }
+.action-btn.success:hover { color: var(--vert-doux); }
+
+/* --- 10. Page Paramètres (Profil) --- */
+.profile-card { max-width: 900px; margin: 0 auto; }
+.profile-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+@media (min-width: 768px) { .profile-grid { grid-template-columns: 200px 1fr; gap: 40px; } }
+.profile-avatar-wrapper { display: flex; justify-content: center; align-items: flex-start; }
+.profile-avatar { width: 150px; height: 150px; border-radius: 50%; background-color: var(--gris-moyen); color: var(--blanc-pur); display: flex; align-items: center; justify-content: center; font-size: 60px; position: relative; cursor: pointer; overflow: hidden; }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-avatar .profile-avatar-overlay { position: absolute; bottom: 0; left: 0; right: 0; height: 100%; background-color: rgba(0, 0, 0, 0.5); color: var(--blanc-pur); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
+.profile-avatar:hover .profile-avatar-overlay { opacity: 1; }
+.profile-fields .form-group { margin-bottom: 20px; }
+.profile-fields label { display: block; font-weight: 600; margin-bottom: 8px; }
+.profile-fields input[type="text"], .profile-fields input[type="email"], .profile-fields input[type="password"] { width: 100%; padding: 12px 15px; border: 1px solid var(--gris-moyen); border-radius: 8px; font-size: 16px; transition: border-color 0.3s; }
+.profile-fields input:focus { outline: none; border-color: var(--bleu-pastel); }
+.profile-fields input[readonly] { background-color: var(--gris-clair); cursor: not-allowed; }
+.form-subtitle { font-family: var(--font-titre); margin-top: 30px; margin-bottom: 20px; border-top: 1px solid var(--gris-moyen); padding-top: 20px; }
+.form-actions { margin-top: 30px; text-align: right; }
+
+/* --- 11. Gestion des pages et Responsive --- */
+.sidebar.collapsed { width: var(--sidebar-width-collapsed); }
+.sidebar.collapsed .sidebar-header .logo { justify-content: center; }
+.sidebar.collapsed .sidebar-header .logo img { max-height: 35px; }
+.sidebar.collapsed .sidebar-nav span, .sidebar.collapsed .user-info, .sidebar.collapsed .badge { display: none; }
+.sidebar.collapsed .nav-item { justify-content: center; }
+.sidebar.collapsed .user-profile:hover { background-color: transparent; }
+#content-container { position: relative; }
+.page-content { display: none; animation: fadeIn 0.4s ease-in-out; }
+.page-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 992px) {
+    .sidebar { transform: translateX(-100%); width: var(--sidebar-width); }
+    .sidebar.collapsed { transform: translateX(0); }
+    .main-content { margin-left: 0; width: 100%; }
+}
+@media (max-width: 768px) {
+    .content-wrapper { padding: 15px; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+}
+
+/* --- 12. Styles Front Office --- (MODIFIÉ) --- */
+/* -- Barre de Navigation -- */
+.main-navbar {
+    width: 100%;
+    height: 80px; 
+    background-color: var(--blanc-pur);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 40px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1001; /* Au-dessus de tout le reste */
+}
+
+.navbar-container {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-brand a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-img { height: 45px; }
+
+.site-name {
+    font-family: var(--font-titre);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--bleu-nuit);
+}
+
+.navbar-links ul {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.nav-link {
+    font-family: var(--font-texte);
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--gris-fonce);
+    padding: 10px 5px;
+    position: relative;
+    transition: color var(--transition-speed);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--bleu-pastel);
+    transition: width var(--transition-speed);
+}
+
+.nav-link:hover, .nav-link.active { color: var(--bleu-pastel); }
+.nav-link:hover::after, .nav-link.active::after { width: 100%; }
+
+.btn-join-us {
+    background-color: var(--orange-chaud);
+    color: var(--blanc-pur);
+    padding: 10px 22px;
+    border-radius: var(--border-radius);
+    transition: all var(--transition-speed);
+}
+
+.btn-join-us:hover {
+    color: var(--blanc-pur);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(244, 162, 97, 0.4);
+}
+.btn-join-us::after { display: none; }
+
+/* -- Section Héros -- */
+.hero-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 100vh;
+    padding: 80px 20px 20px 20px; /* Espace pour la navbar fixe */
+    background: linear-gradient(105deg, rgba(93, 173, 226, 0.8), rgba(123, 211, 137, 0.8)); /* Dégradé avec les couleurs de la charte */
+    color: var(--blanc-pur);
+}
+
+.hero-content h1 {
+    font-family: var(--font-titre);
+    font-size: 4rem; /* 64px */
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.hero-content p {
+    font-size: 1.25rem; /* 20px */
+    font-weight: 300;
+    max-width: 650px;
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+}
+
+.hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.btn-hero-primary, .btn-hero-secondary {
+    padding: 12px 30px;
+    font-family: var(--font-titre);
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: var(--border-radius);
+    transition: all var(--transition-speed);
+}
+
+.btn-hero-primary {
+    background-color: var(--blanc-pur);
+    color: var(--bleu-nuit);
+    box-shadow: var(--card-shadow);
+}
+.btn-hero-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.btn-hero-secondary {
+    background-color: transparent;
+    color: var(--blanc-pur);
+    border: 2px solid var(--blanc-pur);
+}
+.btn-hero-secondary:hover {
+    background-color: var(--blanc-pur);
+    color: var(--bleu-nuit);
+}
+
+/* -- Pied de page (Footer) -- */
+.main-footer {
+    background-color: var(--gris-clair);
+    padding: 60px 40px 0 40px; /* Ajout du padding, mais pas en bas */
+    border-top: 1px solid var(--gris-moyen);
+    color: var(--gris-fonce);
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr; /* La première colonne est plus large */
+    gap: 40px;
+}
+
+.footer-column {
+    padding: 10px 0;
+}
+
+/* Colonne 1: "About" */
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.footer-logo-img {
+    height: 40px;
+    width: 40px;
+}
+
+.footer-site-name {
+    font-family: var(--font-titre);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--bleu-nuit);
+}
+
+.footer-description {
+    font-size: 15px;
+    line-height: 1.7;
+    max-width: 350px; /* Empêche le texte de devenir trop large */
+}
+
+/* Colonnes 2 et 3 */
+.footer-column h4 {
+    font-family: var(--font-titre);
+    font-size: 18px;
+    color: var(--bleu-nuit);
+    margin-bottom: 20px;
+}
+
+.footer-links ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 12px;
+}
+
+.footer-links a {
+    color: var(--gris-fonce);
+    transition: color var(--transition-speed);
+}
+
+.footer-links a:hover {
+    color: var(--bleu-pastel);
+}
+
+/* Icônes sociales */
+.social-icons {
+    display: flex;
+    gap: 15px;
+}
+
+.social-icons a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--gris-clair);
+    color: var(--bleu-pastel);
+    transition: all var(--transition-speed);
+}
+
+.social-icons a:hover {
+    background-color: var(--bleu-pastel);
+    color: var(--blanc-pur);
+    transform: translateY(-3px);
+}
+
+/* Ligne de copyright */
+.footer-bottom {
+    max-width: 1200px;
+    margin: 40px auto 0 auto;
+    padding: 25px 0;
+    border-top: 1px solid var(--gris-moyen);
+    text-align: center;
+    font-size: 14px;
+    color: #888;
+}
+
+/* Responsive pour le footer */
+@media (max-width: 768px) {
+    .footer-container {
+        grid-template-columns: 1fr; /* Une seule colonne sur mobile */
+        text-align: center;
+    }
+    
+    .footer-brand {
+        justify-content: center;
+    }
+    
+    .footer-description {
+        margin: 0 auto; /* Centrer le texte */
+    }
+
+    .social-icons {
+        justify-content: center;
+    }
+}
+/* --- 13. Section Mission (NOUVEAU) --- */
+.mission-section {
+    padding: 80px 40px;
+    background-color: var(--blanc-pur);
+    text-align: center;
+}
+
+.mission-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.mission-section h2 {
+    font-family: var(--font-titre);
+    font-size: 2.5rem; /* 40px */
+    color: var(--bleu-nuit);
+    margin-bottom: 50px;
+}
+
+.mission-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    text-align: center;
+}
+
+.mission-card {
+    background-color: var(--blanc-pur);
+    padding: 40px 30px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mission-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.09);
+}
+
+.mission-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    margin: 0 auto 25px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Couleurs des icônes */
+.mission-icon.icon-blue {
+    background-color: rgba(93, 173, 226, 0.1);
+    color: var(--bleu-pastel);
+}
+.mission-icon.icon-green {
+    background-color: rgba(123, 211, 137, 0.15);
+    color: var(--vert-doux);
+}
+.mission-icon.icon-orange {
+    background-color: rgba(244, 162, 97, 0.15);
+    color: var(--orange-chaud);
+}
+
+
+.mission-card h3 {
+    font-family: var(--font-titre);
+    font-size: 1.3rem; /* 21px */
+    color: var(--bleu-nuit);
+    margin-bottom: 15px;
+}
+
+.mission-card p {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #555;
+}

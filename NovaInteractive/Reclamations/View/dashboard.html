@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaints Dashboard</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+
+<body>
+    <div class="container" style="max-width: 1000px;">
+        <h1>Complaints Dashboard</h1>
+
+        <div class="filters">
+            <label for="filterStatus">Filter by Status:</label>
+            <select id="filterStatus">
+                <option value="">All</option>
+                <option value="pending">Pending</option>
+                <option value="resolved">Resolved</option>
+            </select>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Author ID</th>
+                    <th>Type</th>
+                    <th>Target ID</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="complaintsTableBody">
+                <!-- Data will be populated by JS -->
+            </tbody>
+        </table>
+        <p style="text-align: center; margin-top: 20px;">
+            <a href="form.html">Go to Submission Form</a>
+        </p>
+    </div>
+    <script src="assets/script.js"></script>
+</body>
+
+</html>
