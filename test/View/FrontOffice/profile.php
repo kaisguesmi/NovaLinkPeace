@@ -43,6 +43,16 @@ $initials = strtoupper($initials);
 // 4. Formater la date
 $date = date_create($userData['date_inscription']);
 $formatted_date = date_format($date, 'F Y'); 
+$avatarHTML = '';
+if (!empty($userData['photo_profil'])) {
+    // Si l'utilisateur a une photo, on l'affiche
+    // Attention au chemin : profile.php est dans View/FrontOffice, uploads est dans View/uploads
+    $photoPath = '../uploads/' . htmlspecialchars($userData['photo_profil']);
+    $avatarHTML = "<img src='$photoPath' alt='Profil' class='profile-img-real'>";
+} else {
+    // Sinon, on affiche les initiales
+    $avatarHTML = $initials;
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -88,6 +98,32 @@ $formatted_date = date_format($date, 'F Y');
             background-color: #eee; padding: 4px 8px; border-radius: 4px; 
             font-size: 12px; text-transform: uppercase; letter-spacing: 1px; 
         }
+        .profile-img-real {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* L'image remplit le rond sans être déformée */
+        border-radius: 50%;
+    }
+    /* On s'assure que le conteneur reste rond */
+    .profile-avatar {
+        overflow: hidden; /* Important pour rogner l'image carrée en rond */
+        background: #ddd; /* Fond gris si l'image charge mal */
+    }
+    .btn-ai {
+    background: linear-gradient(135deg, #8e44ad, #9b59b6); /* Violet mystique */
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: transform 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-ai:hover { transform: scale(1.05); box-shadow: 0 2px 5px rgba(142, 68, 173, 0.4); }
     </style>
 </head>
 <body>
@@ -98,7 +134,9 @@ $formatted_date = date_format($date, 'F Y');
 
         <!-- ========= VUE DU PROFIL ========= -->
         <div id="profile-view" class="profile-view-container">
-            <div class="profile-avatar"><?php echo $initials; ?></div>
+            <div class="profile-avatar">
+                <?php echo $avatarHTML; ?>
+            </div>
             <div class="profile-info">
                 <h1>
                     <?php echo htmlspecialchars($displayName); ?>
@@ -131,8 +169,16 @@ $formatted_date = date_format($date, 'F Y');
                 <?php unset($_SESSION['success_update']); ?>
             <?php endif; ?>
 
-            <form id="profile-form" action="../../Controller/UtilisateurController.php" method="POST" novalidate>
+            <form id="profile-form" action="../../Controller/UtilisateurController.php" method="POST" enctype="multipart/form-data" novalidate>
                 <input type="hidden" name="action" value="updateProfile">
+            <form id="profile-form" action="../../Controller/UtilisateurController.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="updateProfile">
+                
+                <!-- === NOUVEAU CHAMP EMAIL (Commun) === -->
+                <div class="form-group">
+                    <label for="email">Adresse Email</label>
+                    <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($userData['email']); ?>" required>
+                </div>
                 
                 <!-- CHAMPS SPECIFIQUES CLIENT -->
                 <?php if ($role === 'client'): ?>
@@ -141,7 +187,8 @@ $formatted_date = date_format($date, 'F Y');
                         <input type="text" id="nom_complet" name="nom_complet" value="<?php echo htmlspecialchars($userData['nom_complet']); ?>">
                     </div>
                     <div class="form-group">
-                        <label for="bio">Bio</label>
+                        <label for="bio">Biographie</label>
+
                         <textarea id="bio" name="bio" rows="4"><?php echo htmlspecialchars($userData['bio']); ?></textarea>
                     </div>
                 
@@ -156,6 +203,10 @@ $formatted_date = date_format($date, 'F Y');
                         <input type="text" id="adresse" name="adresse" value="<?php echo htmlspecialchars($userData['adresse']); ?>">
                     </div>
                 <?php endif; ?>
+                <div class="form-group">
+                    <label for="photo_profil">Photo de profil</label>
+                    <input type="file" id="photo_profil" name="photo_profil" accept="image/*">
+                </div>
 
                 <div class="form-actions">
                     <button type="submit" class="btn-primary" style="padding:10px 20px; cursor:pointer;">Save</button>

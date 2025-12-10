@@ -20,6 +20,8 @@ $utilisateur = new Utilisateur($db);
 $stats = $utilisateur->getDashboardStats();
 $listeOrganisations = $utilisateur->getAllOrganisations();
 $listeClients = $utilisateur->getAllClients();
+// Récupérer les bannis
+$listeBannis = $utilisateur->getAllBannedUsers();
 $adminName = $_SESSION['username'] ?? 'Administrateur';
 
 // Gestion des messages de succès/erreur (flash messages)
@@ -77,6 +79,10 @@ if (isset($_SESSION['error_msg'])) {
             <a href="#clients" class="nav-item">
                 <i class="fa-solid fa-users"></i>
                 <span>Clients</span>
+            </a>
+             <a href="#banned" class="nav-item">
+                <i class="fa-solid fa-user-slash"></i> <!-- Icône utilisateur barré -->
+                <span>Banned Users</span>
             </a>
             <!-- Lien retour Front Office -->
             <a href="../FrontOffice/index.php" class="nav-item">
@@ -182,22 +188,35 @@ if (isset($_SESSION['error_msg'])) {
                                     <?php endif; ?>
                                 </td>
                                 <td class="actions-cell">
-                                    <!-- Formulaire de validation -->
-                                    <?php if ($org['statut_verification'] != 'Verifié'): ?>
-                                        <form action="../../Controller/UtilisateurController.php" method="POST" style="display:inline;">
-                                            <input type="hidden" name="action" value="admin_validate_org">
-                                            <input type="hidden" name="id_organisation" value="<?php echo $org['id_utilisateur']; ?>">
-                                            <button type="submit" class="btn-validate" title="Valider"><i class="fa-solid fa-check"></i></button>
-                                        </form>
-                                    <?php endif; ?>
-
-                                    <!-- Formulaire de suppression -->
-                                    <form action="../../Controller/UtilisateurController.php" method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette organisation ?');">
-                                        <input type="hidden" name="action" value="admin_delete_user">
-                                        <input type="hidden" name="id_utilisateur" value="<?php echo $org['id_utilisateur']; ?>">
-                                        <button type="submit" class="btn-delete" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+    
+                                <!-- Bouton Valider (Si pas vérifié) -->
+                                <?php if ($org['statut_verification'] != 'Verifié'): ?>
+                                    <form action="../../Controller/UtilisateurController.php" method="POST" style="display:inline;">
+                                        <input type="hidden" name="action" value="admin_validate_org">
+                                        <input type="hidden" name="id_organisation" value="<?php echo $org['id_utilisateur']; ?>">
+                                        <button type="submit" class="btn-validate" title="Valider"><i class="fa-solid fa-check"></i></button>
                                     </form>
-                                </td>
+                                <?php endif; ?>
+
+                                <!-- Bouton Modifier -->
+                                <a href="../../Controller/UtilisateurController.php?action=admin_edit_form&id=<?php echo $org['id_utilisateur']; ?>" class="btn-edit" title="Modifier" style="background-color:#3498db; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; margin-right:5px;">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+
+                                <!-- === AJOUTER CE BOUTON BANNIR ICI === -->
+                                <!-- Attention à bien utiliser $org['id_utilisateur'] -->
+                                <a href="../../Controller/UtilisateurController.php?action=admin_ban_form&id=<?php echo $org['id_utilisateur']; ?>" class="btn-ban" title="Bannir" style="background-color:#e74c3c; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; margin-right:5px;">
+                                    <i class="fa-solid fa-ban"></i>
+                                </a>
+                                <!-- ==================================== -->
+
+                                <!-- Bouton Supprimer -->
+                                <form action="../../Controller/UtilisateurController.php" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette organisation ?');">
+                                    <input type="hidden" name="action" value="admin_delete_user">
+                                    <input type="hidden" name="id_utilisateur" value="<?php echo $org['id_utilisateur']; ?>">
+                                    <button type="submit" class="btn-delete" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                            </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -225,17 +244,112 @@ if (isset($_SESSION['error_msg'])) {
                                 <td><?php echo htmlspecialchars($client['email']); ?></td>
                                 <td><?php echo htmlspecialchars($client['date_inscription']); ?></td>
                                 <td class="actions-cell">
-                                    <form action="../../Controller/UtilisateurController.php" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ce client ?');">
-                                        <input type="hidden" name="action" value="admin_delete_user">
-                                        <input type="hidden" name="id_utilisateur" value="<?php echo $client['id_utilisateur']; ?>">
-                                        <button type="submit" class="btn-delete"><i class="fa-solid fa-trash"></i></button>
-                                    </form>
-                                </td>
+    
+                                <!-- Bouton Modifier -->
+                                <a href="../../Controller/UtilisateurController.php?action=admin_edit_form&id=<?php echo $client['id_utilisateur']; ?>" class="btn-edit" title="Modifier" style="background-color:#3498db; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; margin-right:5px;">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+
+                                <!-- === VÉRIFIE QU'IL N'Y A QU'UNE SEULE LIGNE COMME CELLE-CI === -->
+                                <a href="../../Controller/UtilisateurController.php?action=admin_ban_form&id=<?php echo $client['id_utilisateur']; ?>" class="btn-ban" title="Bannir" style="background-color:#e74c3c; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; margin-right:5px;">
+                                    <i class="fa-solid fa-ban"></i>
+                                </a>
+                                <!-- (Si tu as une autre ligne identique en dessous, supprime-la !) -->
+
+                                <!-- Bouton Supprimer -->
+                                <form action="../../Controller/UtilisateurController.php" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ce client ?');">
+                                    <input type="hidden" name="action" value="admin_delete_user">
+                                    <input type="hidden" name="id_utilisateur" value="<?php echo $client['id_utilisateur']; ?>">
+                                    <button type="submit" class="btn-delete" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                            </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <!-- TABLEAU 3 : UTILISATEURS BANNIS -->
+            <!-- TABLEAU 3 : BANNED USERS -->
+            <!-- L'id="banned" permet au lien de la sidebar de descendre ici -->
+            <div class="table-card" id="banned" style="margin-top: 30px; border-top: 4px solid #e74c3c;">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3 style="color: #c0392b; margin:0;"><i class="fa-solid fa-ban"></i> Suspended Users</h3>
+                </div>
+                
+                <?php if (empty($listeBannis)): ?>
+                    <p style="padding: 20px; color: #777; text-align:center;">No suspended users at the moment.</p>
+                <?php else: ?>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User Details</th> <!-- Combiné Nom + Email -->
+                                    <th>Role</th>
+                                    <th>Reason</th>
+                                    <th>Time Left</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($listeBannis as $banni): ?>
+                                    <?php 
+                                        $now = new DateTime();
+                                        $end = new DateTime($banni['date_fin_bannissement']);
+                                        $interval = $now->diff($end);
+                                        
+                                        $timeLeft = "";
+                                        if ($end < $now) {
+                                            $timeLeft = "<span class='badge-expired'>Expired</span>";
+                                        } else {
+                                            if ($interval->days > 0) $timeLeft .= $interval->days . "d ";
+                                            $timeLeft .= $interval->h . "h " . $interval->i . "m";
+                                        }
+                                    ?>
+                                <tr>
+                                    <td>
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <div style="background:#f2f2f2; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#555; font-weight:bold;">
+                                                <?php echo strtoupper(substr($banni['nom'], 0, 1)); ?>
+                                            </div>
+                                            <div>
+                                                <div style="font-weight:bold; color:#2c3e50;"><?php echo htmlspecialchars($banni['nom']); ?></div>
+                                                <div style="font-size:0.85em; color:#7f8c8d;"><?php echo htmlspecialchars($banni['email']); ?></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <?php if($banni['role'] == 'Client'): ?>
+                                            <span class="status-badge client-badge">Client</span>
+                                        <?php else: ?>
+                                            <span class="status-badge orga-badge">Organization</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <span class="reason-text" title="<?php echo htmlspecialchars($banni['raison_bannissement']); ?>">
+                                            "<?php echo htmlspecialchars(substr($banni['raison_bannissement'], 0, 30)); ?>..."
+                                        </span>
+                                    </td>
+                                    <td style="font-weight:bold; color:#e67e22;">
+                                        <i class="fa-regular fa-clock"></i> <?php echo $timeLeft; ?>
+                                    </td>
+                                    <td class="actions-cell">
+                                        <form action="../../Controller/UtilisateurController.php" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to unban this user?');">
+                                            <input type="hidden" name="action" value="admin_unban_user">
+                                            <input type="hidden" name="id_utilisateur" value="<?php echo $banni['id_utilisateur']; ?>">
+                                            
+                                            <!-- Bouton Unban stylisé -->
+                                            <button type="submit" class="btn-unban">
+                                                <i class="fa-solid fa-lock-open"></i> Unban
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
             </div>
 
         </main>

@@ -58,17 +58,6 @@ class Utilisateur {
                     // Le statut de vérification a une valeur par défaut dans la BDD
                     break;
                 
-                case 'admin':
-                    // ATTENTION: En production, la création d'admin ne devrait jamais se faire depuis un formulaire public.
-                    // Ceci est à but démonstratif.
-                    $query_role = "INSERT INTO Admin (id_utilisateur, niveau_permission) VALUES (:id_utilisateur, :niveau_permission)";
-                    $stmt_role = $this->conn->prepare($query_role);
-
-                    $niveau_permission = filter_var($data['niveau_permission'], FILTER_VALIDATE_INT) ? $data['niveau_permission'] : 1;
-
-                    $stmt_role->bindParam(':id_utilisateur', $last_id);
-                    $stmt_role->bindParam(':niveau_permission', $niveau_permission);
-                    break;
                 
                 default:
                     // Si le rôle n'est pas reconnu, on annule tout.
@@ -99,10 +88,10 @@ class Utilisateur {
         return $stmt->fetch(PDO::FETCH_ASSOC); // Renvoie l'utilisateur ou false s'il n'est pas trouvé
     }
 
-    // NOUVELLE MÉTHODE: Récupérer toutes les infos d'un Client pour son profil
     public function findClientById($id) {
         // On ajoute u.date_inscription à la requête SELECT
-        $query = "SELECT u.id_utilisateur, u.email, u.date_inscription, c.nom_complet, c.bio 
+        $query = "SELECT u.id_utilisateur, u.email, u.date_inscription, u.photo_profil, 
+                         c.nom_complet, c.bio 
                   FROM Utilisateur u
                   JOIN Client c ON u.id_utilisateur = c.id_utilisateur
                   WHERE u.id_utilisateur = :id";
@@ -165,7 +154,7 @@ class Utilisateur {
 
     // Récupérer toutes les infos d'une Organisation (pour le profil ou session)
     public function findOrganisationById($id) {
-        $query = "SELECT u.id_utilisateur, u.email, u.date_inscription, 
+        $query = "SELECT u.id_utilisateur, u.email, u.date_inscription, u.photo_profil, 
                          o.nom_organisation, o.adresse, o.statut_verification 
                   FROM Utilisateur u
                   JOIN Organisation o ON u.id_utilisateur = o.id_utilisateur
@@ -176,6 +165,13 @@ class Utilisateur {
         $stmt->execute();
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    public function updatePhoto($id, $filename) {
+        $query = "UPDATE Utilisateur SET photo_profil = :photo WHERE id_utilisateur = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':photo', $filename);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
     }
     // Mise à jour pour l'Organisation
     public function updateOrganisation($id, $nom_organisation, $adresse) {
@@ -207,9 +203,6 @@ class Utilisateur {
         $stmt = $this->conn->query("SELECT COUNT(*) as total_orgs FROM Organisation");
         $orgs = $stmt->fetch(PDO::FETCH_ASSOC)['total_orgs'];
 
-        // --- CORRECTION ICI ---
-        // Au lieu de chercher "En attente", on compte tout ce qui N'EST PAS "Verifié"
-        // Cela inclut NULL, vide, "En attente", "non verifié", etc.
         $queryPending = "SELECT COUNT(*) as pending_orgs 
                          FROM Organisation 
                          WHERE statut_verification != 'Verifié' 
@@ -250,9 +243,6 @@ class Utilisateur {
 
     // 4. Valider une organisation
     public function validateOrganisation($id_admin, $id_organisation) {
-        // Note: Dans ton diagramme, l'admin "valide" l'organisation. 
-        // On pourrait stocker l'ID de l'admin qui a validé si tu as une colonne pour ça, 
-        // sinon on change juste le statut.
         $query = "UPDATE Organisation SET statut_verification = 'Verifié' WHERE id_utilisateur = :id_org";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id_org', $id_organisation);
@@ -269,33 +259,182 @@ class Utilisateur {
         return $stmt->execute();
     }
     // Rechercher des utilisateurs (Clients ou Organisations)
+    // Rechercher des utilisateurs (Par Nom, Bio ou Adresse)
     public function searchGlobal($keyword) {
+        // Sécurisation et ajout des % pour le LIKE
         $keyword = "%" . htmlspecialchars(strip_tags($keyword)) . "%";
 
-        // Cette requête cherche dans Client ET Organisation et combine les résultats
-        // On ajoute une colonne 'role_type' pour savoir qui est qui dans l'affichage
         $query = "
             SELECT u.id_utilisateur, c.nom_complet as nom, 'Client' as type_compte, c.bio as description
             FROM Utilisateur u
             JOIN Client c ON u.id_utilisateur = c.id_utilisateur
-            WHERE c.nom_complet LIKE :keyword1
+            WHERE c.nom_complet LIKE :k1 OR c.bio LIKE :k2
             
             UNION
             
             SELECT u.id_utilisateur, o.nom_organisation as nom, 'Organisation' as type_compte, o.adresse as description
             FROM Utilisateur u
             JOIN Organisation o ON u.id_utilisateur = o.id_utilisateur
-            WHERE o.nom_organisation LIKE :keyword2 AND o.statut_verification = 'Verifié'
+            WHERE (o.nom_organisation LIKE :k3 OR o.adresse LIKE :k4) 
+            AND o.statut_verification = 'Verifié'
         ";
         
-        // Note : J'ai ajouté "AND o.statut_verification = 'Verifié'" pour ne pas montrer les fausses organisations
-
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':keyword1', $keyword);
-        $stmt->bindParam(':keyword2', $keyword);
+        
+        // On lie le même mot-clé à tous les paramètres
+        // (On est obligé de donner des noms différents :k1, :k2... pour être compatible avec tous les drivers PDO)
+        $stmt->bindParam(':k1', $keyword);
+        $stmt->bindParam(':k2', $keyword);
+        $stmt->bindParam(':k3', $keyword);
+        $stmt->bindParam(':k4', $keyword);
+        
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    // Admin : Mettre à jour les infos de connexion (Email + Mot de passe optionnel)
+    public function updateUserCredentials($id, $email, $newPassword = null) {
+        // Si le mot de passe est fourni, on met à jour Email + MDP
+        if (!empty($newPassword)) {
+            $query = "UPDATE Utilisateur SET email = :email, mot_de_passe_hash = :mdp WHERE id_utilisateur = :id";
+            $stmt = $this->conn->prepare($query);
+            $hash = password_hash($newPassword, PASSWORD_BCRYPT);
+            $stmt->bindParam(':mdp', $hash);
+        } else {
+            // Sinon, on met à jour uniquement l'Email
+            $query = "UPDATE Utilisateur SET email = :email WHERE id_utilisateur = :id";
+            $stmt = $this->conn->prepare($query);
+        }
+
+        $email = htmlspecialchars(strip_tags($email));
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+    public function setResetToken($email, $token) {
+        // Le token sera valide 1 heure
+        $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+        $query = "UPDATE Utilisateur SET reset_token = :token, reset_expires = :expires WHERE email = :email";
+        $stmt = $this->conn->prepare($query);
+        
+        $stmt->bindParam(':token', $token);
+        $stmt->bindParam(':expires', $expires);
+        $stmt->bindParam(':email', $email);
+
+        return $stmt->execute();
+    }
+
+    // 2. Vérifier si le token est valide
+    public function getUserByResetToken($token) {
+        $query = "SELECT id_utilisateur, email FROM Utilisateur 
+                  WHERE reset_token = :token AND reset_expires > NOW()";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':token', $token);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // 3. Mettre à jour le mot de passe et supprimer le token
+    public function updatePasswordAfterReset($id, $newPassword) {
+        $query = "UPDATE Utilisateur 
+                  SET mot_de_passe_hash = :mdp, reset_token = NULL, reset_expires = NULL 
+                  WHERE id_utilisateur = :id";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        $hash = password_hash($newPassword, PASSWORD_BCRYPT);
+        $stmt->bindParam(':mdp', $hash);
+        $stmt->bindParam(':id', $id);
+
+        return $stmt->execute();
+    }
+    // --- GESTION DES BANNISSEMENTS ---
+
+    // Bannir un utilisateur
+    public function banUser($id, $raison, $duree_jours) {
+        // Calculer la date de fin (Date actuelle + nombre de jours)
+        // Si duree_jours = 9999, on considère que c'est "à vie" (optionnel)
+        $date_fin = date('Y-m-d H:i:s', strtotime("+$duree_jours days"));
+
+        $query = "UPDATE Utilisateur 
+                  SET est_banni = 1, 
+                      raison_bannissement = :raison, 
+                      date_fin_bannissement = :date_fin 
+                  WHERE id_utilisateur = :id";
+
+        $stmt = $this->conn->prepare($query);
+        
+        $raison = htmlspecialchars(strip_tags($raison));
+        
+        $stmt->bindParam(':raison', $raison);
+        $stmt->bindParam(':date_fin', $date_fin);
+        $stmt->bindParam(':id', $id);
+
+        return $stmt->execute();
+    }
+
+    // Débannir un utilisateur (remettre à zéro)
+    public function unbanUser($id) {
+        $query = "UPDATE Utilisateur 
+                  SET est_banni = 0, raison_bannissement = NULL, date_fin_bannissement = NULL 
+                  WHERE id_utilisateur = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+
+    // Récupérer les infos de bannissement
+    public function getBanInfo($id) {
+        $query = "SELECT est_banni, raison_bannissement, date_fin_bannissement 
+                  FROM Utilisateur WHERE id_utilisateur = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    // Récupérer la liste de TOUS les utilisateurs bannis
+    public function getAllBannedUsers() {
+        // Cette requête est astucieuse :
+        // Elle va chercher dans Client ET Organisation.
+        // COALESCE prend la première valeur non nulle (donc le nom, peu importe la table).
+        $query = "
+            SELECT u.id_utilisateur, u.email, u.raison_bannissement, u.date_fin_bannissement,
+                   COALESCE(c.nom_complet, o.nom_organisation) as nom,
+                   CASE 
+                       WHEN c.id_utilisateur IS NOT NULL THEN 'Client' 
+                       ELSE 'Organisation' 
+                   END as role
+            FROM Utilisateur u
+            LEFT JOIN Client c ON u.id_utilisateur = c.id_utilisateur
+            LEFT JOIN Organisation o ON u.id_utilisateur = o.id_utilisateur
+            WHERE u.est_banni = 1
+            ORDER BY u.date_fin_bannissement ASC
+        ";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    // Mettre à jour l'email de l'utilisateur
+    public function updateEmail($id, $newEmail) {
+        $query = "UPDATE Utilisateur SET email = :email WHERE id_utilisateur = :id";
+        
+        $stmt = $this->conn->prepare($query);
+        $newEmail = htmlspecialchars(strip_tags($newEmail));
+        
+        $stmt->bindParam(':email', $newEmail);
+        $stmt->bindParam(':id', $id);
+
+        try {
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            // Si l'email existe déjà, ça va échouer (contrainte UNIQUE)
+            return false;
+        }
     }
 
 

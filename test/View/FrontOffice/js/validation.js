@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    // ============================================================
     // 1. VALIDATION DU FORMULAIRE D'INSCRIPTION
-    // ============================================================
     const signupForm = document.getElementById('signup-form');
 
     if (signupForm) {
@@ -52,25 +50,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } 
             
-            // CAS 3 : ADMIN (Validation Ajoutée)
-            else if (role === 'admin') {
-                const levelInput = document.getElementById('niveau_permission');
-                const errorLevel = document.getElementById('error-admin-level');
-                
-                // Vérifie si le champ existe (au cas où il serait caché/absent)
-                if (levelInput) {
-                    const levelValue = parseInt(levelInput.value);
-                    
-                    if (levelInput.value.trim() === '' || isNaN(levelValue)) {
-                        if(errorLevel) errorLevel.textContent = "Le niveau de permission est requis.";
-                        isValid = false;
-                    } else if (levelValue < 1 || levelValue > 5) {
-                        // Exemple : on limite le niveau entre 1 et 5
-                        if(errorLevel) errorLevel.textContent = "Le niveau doit être compris entre 1 et 5.";
-                        isValid = false;
-                    }
-                }
-            }
 
             // --- D. Validation des Champs Communs ---
             
@@ -94,10 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================================
     // 2. VALIDATION DU FORMULAIRE DE CONNEXION (LOGIN)
-    // ============================================================
-    // Assure-toi que ton form dans login.php a l'id="login-form"
     const loginForm = document.getElementById('login-form');
 
     if (loginForm) {
