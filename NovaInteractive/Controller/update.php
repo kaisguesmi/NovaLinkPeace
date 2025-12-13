@@ -2,8 +2,6 @@
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Max-Age: 3600");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
 include_once '../Model/db.php';
 include_once '../Model/Complaint.php';
@@ -18,10 +16,15 @@ $data = json_decode(file_get_contents("php://input"));
 if(!empty($data->id) && !empty($data->status)){
     $complaint->id = $data->id;
     $complaint->status = $data->status;
+    
+    if (isset($data->category)) {
+        $complaint->category = $data->category;
+    }
+    $admin_response = isset($data->admin_response) ? $data->admin_response : null;
 
-    if($complaint->updateStatus()){
+    if($complaint->updateStatus($admin_response)){
         http_response_code(200);
-        echo json_encode(array("message" => "Complaint status updated."));
+        echo json_encode(array("message" => "Complaint updated."));
     } else{
         http_response_code(503);
         echo json_encode(array("message" => "Unable to update complaint status."));

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed - PeaceLink</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .feed-container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .post {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .post-content {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .post-actions {
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            text-align: right;
+        }
+
+        .report-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .report-btn:hover {
+            text-decoration: underline;
+        }
+
+        .comments-section {
+            margin-top: 15px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .comment {
+            border-bottom: 1px solid #eee;
+            padding: 8px 0;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .comment:last-child {
+            border-bottom: none;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .modal input,
+        .modal select,
+        .modal textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .modal button {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========== Barre de Navigation Principale =========== -->
+    <header class="main-navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <a href="index.html">
+                    <img src="mon-logo.png" alt="Logo PeaceLink" class="logo-img">
+                    <span class="site-name">PeaceLink</span>
+                </a>
+            </div>
+            <nav class="navbar-links">
+                <ul>
+                    <li><a href="index.html" class="nav-link">Home</a></li>
+                    <li><a href="#" class="nav-link active">Feed</a></li>
+                    <li><a href="my_reports.html" class="nav-link">My Reports</a></li>
+                    <li><a href="#" class="nav-link" onclick="logout()">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- =========== Feed Content =========== -->
+    <main style="background-color: #f4f6f8; min-height: 80vh;">
+        <div class="feed-container" id="feedContainer">
+            <!-- Posts will be loaded here -->
+            <div style="text-align: center; color: #666;">Loading posts...</div>
+        </div>
+    </main>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Report Content</h2>
+            <form id="reportForm">
+                <input type="hidden" id="reportTargetType" name="target_type">
+                <input type="hidden" id="reportTargetId" name="target_id">
+
+                <label for="category">Category:</label>
+                <select id="category" name="category" required>
+                    <option value="Sexual Harassment">Sexual Harassment</option>
+                    <option value="Suicide">Suicide</option>
+                    <option value="Ethnicity">Ethnicity</option>
+                    <option value="Sexism">Sexism</option>
+                    <option value="Fraud">Fraud</option>
+                    <option value="Violence">Violence</option>
+                    <option value="Spam">Spam</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label for="reason">Reason:</label>
+                <textarea id="reason" name="reason" rows="4" required placeholder="Describe the issue..."></textarea>
+
+                <button type="submit">Submit Report</button>
+                <div id="reportMessage" style="margin-top: 10px; text-align: center;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Post Modal -->
+    <div id="editPostModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditPostModal()">&times;</span>
+            <h2>Edit Post</h2>
+            <form id="editPostForm">
+                <input type="hidden" id="editPostId">
+                <label for="editContent">Content:</label>
+                <textarea id="editContent" required rows="5"
+                    style="width:100%; border:1px solid #ddd; padding:8px;"></textarea>
+                <button type="submit" style="background-color: #3498db; margin-top:10px;">Update Post</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- =========== Pied de page (Footer) =========== -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-column footer-about">
+                <div class="footer-brand">
+                    <img src="mon-logo.png" alt="PeaceLink Logo" class="footer-logo-img">
+                    <span class="footer-site-name">PeaceLink</span>
+                </div>
+                <p class="footer-description">Building peace through community stories and local initiatives.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 PeaceLink. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const feedContainer = document.getElementById('feedContainer');
+            const reportModal = document.getElementById('reportModal');
+            const reportForm = document.getElementById('reportForm');
+            const closeBtn = document.querySelector('.close');
+
+            if (!localStorage.getItem('user_id')) {
+                window.location.href = 'login.html';
+            }
+
+            loadFeed();
+
+            async function loadFeed() {
+                try {
+                    const response = await fetch('../../Controller/feed.php');
+                    const posts = await response.json();
+
+                    feedContainer.innerHTML = '';
+                    posts.forEach(post => {
+                        const postEl = document.createElement('div');
+                        postEl.className = 'post';
+                        postEl.innerHTML = `
+                            <div class="post-header">
+                                <span>${post.author}</span>
+                                <span>${new Date(post.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <div class="post-content">${post.content}</div>
+                            <div class="post-actions">
+                                <button class="report-btn" onclick="openEditPostModal(${post.id}, '${post.content.replace(/'/g, "\\'")}')" style="color:#3498db; margin-right:10px;">Edit</button>
+                                <button class="report-btn" onclick="openReportModal('post', ${post.id})">Report Post</button>
+                            </div>
+                            <div class="comments-section">
+                                ${post.comments.map(comment => `
+                                    <div class="comment">
+                                        <span><b>${comment.author}:</b> ${comment.content}</span>
+                                        <button class="report-btn" style="padding: 2px 5px; font-size: 10px;" onclick="openReportModal('comment', ${comment.id})">Report</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                        feedContainer.appendChild(postEl);
+                    });
+                } catch (error) {
+                    console.error('Error loading feed:', error);
+                    feedContainer.innerHTML = '<div style="text-align: center; color: red;">Error loading posts.</div>';
+                }
+            }
+
+            window.openReportModal = (type, id) => {
+                document.getElementById('reportTargetType').value = type;
+                document.getElementById('reportTargetId').value = id;
+                reportModal.style.display = 'block';
+            };
+
+            closeBtn.onclick = () => {
+                reportModal.style.display = 'none';
+            };
+
+            window.onclick = (event) => {
+                if (event.target == reportModal) {
+                    reportModal.style.display = 'none';
+                }
+            };
+
+            reportForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(reportForm);
+                const data = Object.fromEntries(formData.entries());
+                data.author_id = localStorage.getItem('user_id');
+
+                try {
+                    const response = await fetch('../../Controller/submit.php', {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+                    const result = await response.json();
+                    const msgDiv = document.getElementById('reportMessage');
+
+                    if (response.ok) {
+                        msgDiv.textContent = 'Report submitted successfully.';
+                        msgDiv.style.color = 'green';
+                        setTimeout(() => {
+                            reportModal.style.display = 'none';
+                            msgDiv.textContent = '';
+                            reportForm.reset();
+                        }, 1500);
+                    } else {
+                        msgDiv.textContent = result.message;
+                        msgDiv.style.color = 'red';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+
+            window.logout = () => {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            };
+
+            // Edit Logic
+            const editPostModal = document.getElementById('editPostModal');
+            const editPostForm = document.getElementById('editPostForm');
+
+            window.openEditPostModal = (id, content) => {
+                document.getElementById('editPostId').value = id;
+                document.getElementById('editContent').value = content;
+                editPostModal.style.display = 'block';
+            };
+
+            window.closeEditPostModal = () => {
+                editPostModal.style.display = 'none';
+            };
+
+            editPostForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('editPostId').value;
+                const content = document.getElementById('editContent').value;
+
+                try {
+                    const response = await fetch('../../Controller/edit_post.php', {
+                        method: 'POST',
+                        body: JSON.stringify({ id: id, content: content })
+                    });
+                    if (response.ok) {
+                        alert('Post updated!');
+                        editPostModal.style.display = 'none';
+                        loadFeed(); // Refresh feed
+                    } else {
+                        alert('Error updating post');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

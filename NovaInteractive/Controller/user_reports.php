@@ -10,32 +10,33 @@ $db = $database->getConnection();
 
 $complaint = new Complaint($db);
 
-$status = isset($_GET['status']) ? $_GET['status'] : null;
+$user_id = isset($_GET['user_id']) ? $_GET['user_id'] : die();
 
-$stmt = $complaint->read($status);
+$stmt = $complaint->getUserReports($user_id);
 $num = $stmt->rowCount();
 
-if($num > 0){
-    $complaints_arr = array();
-    $complaints_arr["records"] = array();
+if($num > 0) {
+    $reports_arr = array();
+    $reports_arr["records"] = array();
 
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)){
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         extract($row);
-        $complaint_item = array(
+        $report_item = array(
             "id" => $id,
-            "author_id" => $author_id,
             "target_type" => $target_type,
             "target_id" => $target_id,
+            "category" => $category,
             "reason" => $reason,
             "status" => $status,
+            "admin_response" => $admin_response,
             "created_at" => $created_at
         );
-        array_push($complaints_arr["records"], $complaint_item);
+        array_push($reports_arr["records"], $report_item);
     }
     http_response_code(200);
-    echo json_encode($complaints_arr);
-} else{
-    http_response_code(404);
-    echo json_encode(array("message" => "No complaints found."));
+    echo json_encode($reports_arr);
+} else {
+    http_response_code(200); // Return empty list instead of 404
+    echo json_encode(array("records" => []));
 }
 ?>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reports - PeaceLink</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .reports-container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .report-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid #ddd;
+        }
+
+        .report-card.pending {
+            border-left-color: #f39c12;
+        }
+
+        .report-card.accepted {
+            border-left-color: #27ae60;
+        }
+
+        .report-card.denied {
+            border-left-color: #c0392b;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.8em;
+        }
+
+        .status-badge.pending {
+            background-color: #f39c12;
+        }
+
+        .status-badge.accepted {
+            background-color: #27ae60;
+        }
+
+        .status-badge.denied {
+            background-color: #c0392b;
+        }
+
+        .admin-response {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-style: italic;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========== Barre de Navigation Principale =========== -->
+    <header class="main-navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <a href="index.html">
+                    <img src="mon-logo.png" alt="Logo PeaceLink" class="logo-img">
+                    <span class="site-name">PeaceLink</span>
+                </a>
+            </div>
+            <nav class="navbar-links">
+                <ul>
+                    <li><a href="index.html" class="nav-link">Home</a></li>
+                    <li><a href="feed.html" class="nav-link">Feed</a></li>
+                    <li><a href="#" class="nav-link active">My Reports</a></li>
+                    <li><a href="#" class="nav-link" onclick="logout()">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- =========== Content =========== -->
+    <main style="background-color: #f4f6f8; min-height: 80vh;">
+        <div class="reports-container" id="reportsContainer">
+            <div style="text-align: center; color: #666;">Loading reports...</div>
+        </div>
+    </main>
+
+    <!-- =========== Pied de page (Footer) =========== -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-column footer-about">
+                <div class="footer-brand">
+                    <img src="mon-logo.png" alt="PeaceLink Logo" class="footer-logo-img">
+                    <span class="footer-site-name">PeaceLink</span>
+                </div>
+                <p class="footer-description">Building peace through community stories and local initiatives.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 PeaceLink. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const reportsContainer = document.getElementById('reportsContainer');
+            const userId = localStorage.getItem('user_id');
+
+            if (!userId) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            loadReports();
+
+            async function loadReports() {
+                try {
+                    const response = await fetch(`../../Controller/user_reports.php?user_id=${userId}`);
+                    const data = await response.json();
+
+                    reportsContainer.innerHTML = '';
+                    if (data.records.length === 0) {
+                        reportsContainer.innerHTML = '<div style="text-align: center;">You have no reports.</div>';
+                        return;
+                    }
+
+                    data.records.forEach(report => {
+                        const card = document.createElement('div');
+                        card.className = `report-card ${report.status}`;
+                        card.innerHTML = `
+                            <div class="report-header">
+                                <span>Report #${report.id} - ${report.category}</span>
+                                <span class="status-badge ${report.status}">${report.status.toUpperCase()}</span>
+                            </div>
+                            <p><strong>Reason:</strong> ${report.reason}</p>
+                            <p style="font-size: 0.9em; color: #888;">Submitted on: ${new Date(report.created_at).toLocaleDateString()}</p>
+                            ${report.admin_response ? `<div class="admin-response"><strong>Admin Response:</strong> ${report.admin_response}</div>` : ''}
+                        `;
+                        reportsContainer.appendChild(card);
+                    });
+                } catch (error) {
+                    console.error('Error loading reports:', error);
+                    reportsContainer.innerHTML = '<div style="text-align: center; color: red;">Error loading reports.</div>';
+                }
+            }
+
+            window.logout = () => {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            };
+        });
+    </script>
+</body>
+
+</html>

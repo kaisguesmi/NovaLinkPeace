@@ -4,7 +4,7 @@ A full-stack PHP/MySQL module for handling user complaints.
 
 ## Structure
 - **Model/**: Database connection and Complaint class.
-- **Controller/**: API endpoints for handling requests.
+- **Controller/**: endpoints for handling requests.
 - **View/**: HTML/CSS/JS interfaces.
 - **schema.sql**: Database schema.
 

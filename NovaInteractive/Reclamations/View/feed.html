@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed - NovaLinkPeace</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+
+<body>
+    <div class="navbar">
+        <span>NovaLinkPeace Feed</span>
+        <button onclick="logout()" class="logout-btn">Logout</button>
+    </div>
+
+    <div class="container feed-container" id="feedContainer">
+        <!-- Posts will be loaded here -->
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Report Content</h2>
+            <form id="reportForm">
+                <input type="hidden" id="reportTargetType" name="target_type">
+                <input type="hidden" id="reportTargetId" name="target_id">
+
+                <label for="reportCategory">Category:</label>
+                <select id="reportCategory" name="category" required>
+                    <option value="">Select Category</option>
+                    <option value="Sexual Harassment">Sexual Harassment</option>
+                    <option value="Suicide">Suicide</option>
+                    <option value="Ethnicity">Ethnicity</option>
+                    <option value="Sexism">Sexism</option>
+                    <option value="Fraud">Fraud</option>
+                    <option value="Violence">Violence</option>
+                    <option value="Spam">Spam</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label for="reportReason">Reason for reporting:</label>
+                <textarea id="reportReason" name="reason" required></textarea>
+
+                <button type="submit">Submit Report</button>
+            </form>
+            <div id="reportMessage"></div>
+        </div>
+    </div>
+
+    <script src="assets/script.js"></script>
+</body>
+
+</html>
