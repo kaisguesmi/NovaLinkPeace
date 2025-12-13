@@ -62,7 +62,7 @@ class OfferController {
                 die("Accès interdit");
             }
             
-            $this->offerModel->id_organisation = $_SESSION['user_id'];
+            $this->offerModel->org_id = $_SESSION['user_id'];
             $this->offerModel->title = trim($_POST['title']);
             $this->offerModel->description = trim($_POST['description']);
             $this->offerModel->max_candidates = intval($_POST['max_candidates']);
@@ -221,7 +221,7 @@ class OfferController {
     // Helper pour éviter de répéter le code d'enregistrement
     private function saveApplication($offerId, $motivation, $status, $score, $sentiment) {
         $this->applicationModel->offer_id = $offerId;
-        $this->applicationModel->id_client = $_SESSION['user_id'];
+        $this->applicationModel->candidate_id = $_SESSION['user_id'];
         $this->applicationModel->candidate_name = trim($_POST['candidate_name']);
         $this->applicationModel->candidate_email = trim($_POST['candidate_email']);
         $this->applicationModel->motivation = $motivation;
