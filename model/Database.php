@@ -1,7 +1,7 @@
 <?php
 class Database {
     private static $host = "localhost";
-    private static $db_name = "gestion_offres_db"; 
+    private static $db_name = "peacelink"; 
     private static $username = "root";             
     private static $password = "";                 
     private static $conn;

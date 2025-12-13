@@ -6,6 +6,7 @@ class Offer {
     private $table_name = "offers";
 
     public $id;
+    public $id_organisation;
     public $title;
     public $description;
     public $status;
@@ -18,14 +19,25 @@ class Offer {
         $this->conn = Database::getConnection();
     }
 
-    // Récupère les offres ET le nombre (sauf les refusés)
-    public function getAll() {
-        // MODIFICATION ICI : On ajoute AND status != 'refusée'
-        $query = "SELECT o.*, 
+    // Récupère toutes les offres OU seulement celles d'une organisation
+    public function getAll($id_organisation = null) {
+        $query = "SELECT o.*, org.nom_organisation,
                   (SELECT COUNT(*) FROM applications a WHERE a.offer_id = o.id AND a.status != 'refusée') as current_count
                   FROM " . $this->table_name . " o 
-                  ORDER BY o.created_at DESC";
+                  LEFT JOIN Organisation org ON o.id_organisation = org.id_utilisateur";
+        
+        if ($id_organisation) {
+            $query .= " WHERE o.id_organisation = :id_org";
+        }
+        
+        $query .= " ORDER BY o.created_at DESC";
+        
         $stmt = $this->conn->prepare($query);
+        
+        if ($id_organisation) {
+            $stmt->bindParam(':id_org', $id_organisation);
+        }
+        
         $stmt->execute();
         return $stmt;
     }
@@ -65,14 +77,16 @@ class Offer {
     }
 
     public function create() {
-        $query = "INSERT INTO " . $this->table_name . " SET title=:title, description=:description, status=:status, max_candidates=:max, keywords=:keywords, created_at=NOW()";
+        $query = "INSERT INTO " . $this->table_name . " SET id_organisation=:id_org, title=:title, description=:description, status=:status, max_candidates=:max, keywords=:keywords, created_at=NOW()";
         $stmt = $this->conn->prepare($query);
 
+        $this->id_organisation = htmlspecialchars(strip_tags($this->id_organisation));
         $this->title = htmlspecialchars(strip_tags($this->title));
         $this->description = htmlspecialchars(strip_tags($this->description));
         $this->status = 'publiée';
         $this->keywords = htmlspecialchars(strip_tags($this->keywords));
 
+        $stmt->bindParam(":id_org", $this->id_organisation);
         $stmt->bindParam(":title", $this->title);
         $stmt->bindParam(":description", $this->description);
         $stmt->bindParam(":status", $this->status);

@@ -8,6 +8,7 @@ class Application {
     
     public $id;
     public $offer_id;
+    public $id_client;
     public $candidate_name;
     public $candidate_email;
     public $motivation;
@@ -23,13 +24,14 @@ class Application {
     }
 
     public function create() {
-        // Ajout de score et sentiment dans la requête
+        // Ajout de id_client, score et sentiment dans la requête
         $query = "INSERT INTO " . $this->table_name . " 
-                  SET offer_id=:offer_id, candidate_name=:candidate_name, candidate_email=:candidate_email, motivation=:motivation, status=:status, score=:score, sentiment=:sentiment, submitted_at=NOW()";
+                  SET offer_id=:offer_id, id_client=:id_client, candidate_name=:candidate_name, candidate_email=:candidate_email, motivation=:motivation, status=:status, score=:score, sentiment=:sentiment, submitted_at=NOW()";
         
         $stmt = $this->conn->prepare($query);
         
         $this->offer_id = htmlspecialchars(strip_tags($this->offer_id));
+        $this->id_client = htmlspecialchars(strip_tags($this->id_client));
         $this->candidate_name = htmlspecialchars(strip_tags($this->candidate_name));
         $this->candidate_email = htmlspecialchars(strip_tags($this->candidate_email));
         $this->motivation = htmlspecialchars(strip_tags($this->motivation));
@@ -37,6 +39,7 @@ class Application {
         if(empty($this->status)) { $this->status = 'en attente'; }
 
         $stmt->bindParam(":offer_id", $this->offer_id);
+        $stmt->bindParam(":id_client", $this->id_client);
         $stmt->bindParam(":candidate_name", $this->candidate_name);
         $stmt->bindParam(":candidate_email", $this->candidate_email);
         $stmt->bindParam(":motivation", $this->motivation);
@@ -50,10 +53,13 @@ class Application {
     }
 
     public function getAllWithOfferDetails($offer_id = null) {
-        // On récupère aussi le score et le sentiment
-        $query = "SELECT app.*, off.title as offer_title 
+        // On récupère aussi le score, sentiment et les infos du client
+        $query = "SELECT app.*, off.title as offer_title, off.id_organisation,
+                  cl.nom_complet as client_nom, u.email as client_email_user
                   FROM " . $this->table_name . " as app
-                  LEFT JOIN offers as off ON app.offer_id = off.id";
+                  LEFT JOIN offers as off ON app.offer_id = off.id
+                  LEFT JOIN Client as cl ON app.id_client = cl.id_utilisateur
+                  LEFT JOIN Utilisateur as u ON app.id_client = u.id_utilisateur";
         
         if ($offer_id) {
             $query .= " WHERE app.offer_id = :offer_id";

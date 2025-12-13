@@ -5,7 +5,7 @@
         <!-- Titre dynamique si filtre actif -->
         <?php if(isset($filter_title) && $filter_title): ?>
             <h1>Candidats pour : "<?= htmlspecialchars($filter_title) ?>"</h1>
-            <a href="index.php?action=list_applications&role=organisateur" style="font-size:14px; color:var(--bleu-pastel); text-decoration:none;">
+            <a href="index.php?action=list_applications" style="font-size:14px; color:var(--bleu-pastel); text-decoration:none;">
                 <i class="fas fa-arrow-left"></i> Retour à toutes les candidatures
             </a>
         <?php else: ?>
@@ -47,6 +47,7 @@
                                     </div>
                                     <div style="display:flex; flex-direction:column;">
                                         <span style="font-weight:600; color:var(--bleu-nuit);"><?= htmlspecialchars($app['candidate_name']) ?></span>
+                                        <span style="font-size:11px; color:#999;">@<?= htmlspecialchars($app['client_nom'] ?? 'Client') ?></span>
                                         <a href="mailto:<?= htmlspecialchars($app['candidate_email']) ?>" style="font-size:12px; color:#888;">
                                             <?= htmlspecialchars($app['candidate_email']) ?>
                                         </a>
@@ -109,13 +110,13 @@
                             <td class="actions-cell" style="text-align: right;">
                                 <?php if ($app['status'] === 'en attente'): ?>
                                     <!-- Boutons visibles uniquement si en attente -->
-                                    <a href="index.php?action=update_status&id=<?= $app['id'] ?>&status=acceptée&role=organisateur" 
+                                    <a href="index.php?action=update_status&id=<?= $app['id'] ?>&status=acceptée" 
                                        class="action-btn success" title="Accepter et envoyer Email"
                                        onclick="return confirm('Confirmer l\'acceptation de ce candidat ?');">
                                         <i class="fas fa-check"></i>
                                     </a>
                                     
-                                    <a href="index.php?action=update_status&id=<?= $app['id'] ?>&status=refusée&role=organisateur" 
+                                    <a href="index.php?action=update_status&id=<?= $app['id'] ?>&status=refusée" 
                                        class="action-btn danger" title="Refuser"
                                        onclick="return confirm('Refuser cette candidature ?');">
                                         <i class="fas fa-times"></i>

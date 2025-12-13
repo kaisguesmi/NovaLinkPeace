@@ -3,6 +3,12 @@
 
 require_once 'model/Offer.php';
 require_once 'model/Application.php';
+require_once 'model/EmailService.php';
+
+// Démarrer la session pour gérer les utilisateurs connectés
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 class OfferController {
     private $offerModel;
@@ -21,22 +27,49 @@ class OfferController {
     // =========================================================
 
     public function listOffers() {
-        $user_role = isset($_GET['role']) && $_GET['role'] === 'organisateur' ? 'organisateur' : 'client';
-        $offers = $this->offerModel->getAll()->fetchAll(PDO::FETCH_ASSOC);
+        // Vérifier si l'utilisateur est connecté
+        if (!isset($_SESSION['user_id'])) {
+            header("Location: NovaLinkPeace/test/View/FrontOffice/login.php");
+            exit();
+        }
+        
+        $user_role = $_SESSION['role'] ?? 'client';
+        $user_id = $_SESSION['user_id'];
+        
+        // Si organisation, on peut filtrer ses propres offres ou voir toutes
+        if ($user_role === 'organisation') {
+            $show_all = isset($_GET['view']) && $_GET['view'] === 'all';
+            $offers = $this->offerModel->getAll($show_all ? null : $user_id)->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            // Les clients voient toutes les offres
+            $offers = $this->offerModel->getAll()->fetchAll(PDO::FETCH_ASSOC);
+        }
+        
         require 'view/offers_list.php';
     }
 
-    public function createOffer() { require 'view/offer_form.php'; }
+    public function createOffer() { 
+        // Seules les organisations peuvent créer des offres
+        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
+            die("Accès interdit : Vous devez être une organisation pour créer une offre.");
+        }
+        require 'view/offer_form.php'; 
+    }
 
     public function storeOffer() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
+                die("Accès interdit");
+            }
+            
+            $this->offerModel->id_organisation = $_SESSION['user_id'];
             $this->offerModel->title = trim($_POST['title']);
             $this->offerModel->description = trim($_POST['description']);
             $this->offerModel->max_candidates = intval($_POST['max_candidates']);
             $this->offerModel->keywords = trim($_POST['keywords']);
             
             if ($this->offerModel->create()) {
-                header("Location: index.php?role=organisateur&status=created");
+                header("Location: index.php?action=list&status=created");
                 exit();
             }
         }
@@ -44,7 +77,13 @@ class OfferController {
 
     public function editOffer() {
         $id = $_GET['id'] ?? die('ID manquant.');
+        
         if ($this->offerModel->getById($id)) {
+            // Vérifier que l'organisation modifie bien sa propre offre
+            if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
+                die("Accès interdit");
+            }
+            
             $offer = [
                 'id' => $this->offerModel->id,
                 'title' => $this->offerModel->title,
@@ -58,6 +97,10 @@ class OfferController {
 
     public function updateOffer() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
+                die("Accès interdit");
+            }
+            
             $this->offerModel->id = $_GET['id'];
             $this->offerModel->title = trim($_POST['title']);
             $this->offerModel->description = trim($_POST['description']);
@@ -65,16 +108,20 @@ class OfferController {
             $this->offerModel->keywords = trim($_POST['keywords']);
             
             if ($this->offerModel->update()) {
-                header("Location: index.php?role=organisateur&status=updated");
+                header("Location: index.php?action=list&status=updated");
                 exit();
             }
         }
     }
 
     public function deleteOffer() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
+            die("Accès interdit");
+        }
+        
         $this->offerModel->id = $_GET['id'];
         if ($this->offerModel->delete()) {
-            header("Location: index.php?role=organisateur&status=deleted");
+            header("Location: index.php?action=list&status=deleted");
             exit();
         }
     }
@@ -84,6 +131,10 @@ class OfferController {
     // =========================================================
 
     public function showApplicationForm() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'client') {
+            die("Accès interdit : Seuls les clients peuvent postuler.");
+        }
+        
         $id = $_GET['id'];
         if ($this->offerModel->isFull($id)) {
             die("<div style='text-align:center;margin-top:50px;'><h1 style='color:#E74C3C'>Offre Complète</h1><p>Quota atteint.</p><a href='index.php'>Retour</a></div>");
@@ -96,6 +147,10 @@ class OfferController {
 
     public function submitApplication() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'client') {
+                die("Accès interdit");
+            }
+            
             $offer_id = $_POST['offer_id'];
             
             // 0. Vérification Quota
@@ -166,6 +221,7 @@ class OfferController {
     // Helper pour éviter de répéter le code d'enregistrement
     private function saveApplication($offerId, $motivation, $status, $score, $sentiment) {
         $this->applicationModel->offer_id = $offerId;
+        $this->applicationModel->id_client = $_SESSION['user_id'];
         $this->applicationModel->candidate_name = trim($_POST['candidate_name']);
         $this->applicationModel->candidate_email = trim($_POST['candidate_email']);
         $this->applicationModel->motivation = $motivation;
@@ -180,36 +236,63 @@ class OfferController {
     // =========================================================
 
     public function listApplications() {
-        if (!isset($_GET['role']) || $_GET['role'] !== 'organisateur') die("Accès interdit.");
+        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
+            die("Accès interdit : Seules les organisations peuvent voir les candidatures.");
+        }
+        
         $offer_id = isset($_GET['offer_id']) ? $_GET['offer_id'] : null;
         $applications = $this->applicationModel->getAllWithOfferDetails($offer_id)->fetchAll(PDO::FETCH_ASSOC);
-        $filter_title = null;
+        
+        // Si filtré par offre, vérifier que l'offre appartient à l'organisation
         if ($offer_id) {
             $this->offerModel->getById($offer_id);
             $filter_title = $this->offerModel->title;
+        } else {
+            $filter_title = null;
         }
+        
         require 'view/admin_applications_list.php';
     }
 
     public function updateApplicationStatus() {
-        if (!isset($_GET['role']) || $_GET['role'] !== 'organisateur') die("Accès interdit.");
+        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
+            die("Accès interdit");
+        }
+        
         $id = $_GET['id'] ?? null;
         $status = $_GET['status'] ?? null;
         
         if ($id && in_array($status, ['acceptée', 'refusée'])) {
-            // Envoi Email si accepté
-            if ($status === 'acceptée') {
-                $appInfo = $this->applicationModel->getById($id);
-                if ($appInfo) {
-                    $this->sendAcceptanceEmail(
+            // Récupérer les infos de la candidature et de l'offre
+            $appInfo = $this->applicationModel->getById($id);
+            
+            if ($appInfo) {
+                // Récupérer le nom de l'organisation
+                $this->offerModel->getById($appInfo['offer_id']);
+                
+                // Utiliser le nom de l'organisation depuis la session ou la base
+                $orgName = $_SESSION['organisation_name'] ?? 'Notre Organisation';
+                
+                // Envoi Email selon le statut
+                if ($status === 'acceptée') {
+                    EmailService::sendAcceptanceEmail(
                         $appInfo['candidate_email'], 
                         $appInfo['candidate_name'], 
-                        $appInfo['offer_title']
+                        $appInfo['offer_title'],
+                        $orgName
+                    );
+                } elseif ($status === 'refusée') {
+                    EmailService::sendRejectionEmail(
+                        $appInfo['candidate_email'], 
+                        $appInfo['candidate_name'], 
+                        $appInfo['offer_title'],
+                        $orgName
                     );
                 }
             }
+            
             $this->applicationModel->updateStatus($id, $status);
-            header("Location: index.php?action=list_applications&role=organisateur&status=app_updated");
+            header("Location: index.php?action=list_applications&status=app_updated");
             exit();
         }
     }
@@ -287,53 +370,6 @@ class OfferController {
         $score = 0;
         foreach ($pos as $w) $score += substr_count(mb_strtolower($text), $w);
         return ($score >= 1) ? 'Confiant' : 'Neutre';
-    }
-
-    // 5. EMAIL PROFESSIONNEL (DESIGN COMPLET)
-    private function sendAcceptanceEmail($toEmail, $candidateName, $offerTitle) {
-        $subject = "Félicitations ! Votre candidature a été retenue 🚀";
-        
-        $message = '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                .btn { display:inline-block; background:#7BD389; color:#fff; padding:12px 25px; border-radius:30px; text-decoration:none; font-weight:bold; }
-                .card { background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.05); max-width:600px; margin:20px auto; }
-                .head { background:#8E44AD; padding:25px; text-align:center; color:#fff; }
-                .body { padding:30px; color:#333; line-height:1.6; font-family:Arial, sans-serif; }
-                .highlight { background:#f8f9fa; border-left:4px solid #8E44AD; padding:15px; margin:20px 0; font-weight:bold; color:#2c3e50; }
-                .foot { background:#e9ecef; padding:15px; text-align:center; font-size:12px; color:#777; }
-            </style>
-        </head>
-        <body style="margin:0; padding:0; background:#f4f6f9;">
-            <div class="card">
-                <div class="head">
-                    <h1 style="margin:0; font-size:22px;">CANDIDATURE ACCEPTÉE</h1>
-                </div>
-                <div class="body">
-                    <p>Bonjour <strong>' . htmlspecialchars($candidateName) . '</strong>,</p>
-                    <p>Bonne nouvelle ! L\'organisateur a validé votre profil pour :</p>
-                    <div class="highlight">' . htmlspecialchars($offerTitle) . '</div>
-                    <p>Préparez-vous pour la suite !</p>
-                    <div style="text-align:center; margin-top:30px;">
-                        <a href="http://localhost/Module4_Gestion_Offres" class="btn">Accéder à mon espace</a>
-                    </div>
-                </div>
-                <div class="foot">&copy; ' . date('Y') . ' Gestion des Offres.</div>
-            </div>
-        </body>
-        </html>';
-
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-        $headers .= "From: Organisation <no-reply@mon-site.com>" . "\r\n";
-
-        if (!@mail($toEmail, $subject, $message, $headers)) {
-            if (!is_dir('emails_simules')) mkdir('emails_simules');
-            file_put_contents('emails_simules/mail_' . time() . '.html', $message);
-        }
     }
 }
 ?>

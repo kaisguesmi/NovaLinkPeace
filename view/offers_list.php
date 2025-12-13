@@ -3,14 +3,29 @@
 <div class="page-header">
     <div>
         <h1>Offres de Mission</h1>
-        <p class="page-subtitle">Trouvez votre prochaine mission parmi nos opportunités.</p>
+        <?php if ($user_role === 'organisation'): ?>
+            <p class="page-subtitle">Gérez vos offres et consultez les candidatures.</p>
+        <?php else: ?>
+            <p class="page-subtitle">Trouvez votre prochaine mission parmi nos opportunités.</p>
+        <?php endif; ?>
     </div>
     
-    <!-- Bouton Créer (Visible seulement pour Organisateur) -->
-    <?php if ($user_role === 'organisateur'): ?>
-        <a href="index.php?action=create&role=organisateur" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Publier une offre
-        </a>
+    <!-- Bouton Créer (Visible seulement pour Organisation) -->
+    <?php if ($user_role === 'organisation'): ?>
+        <div style="display: flex; gap: 10px;">
+            <a href="index.php?action=create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Publier une offre
+            </a>
+            <?php if (isset($_GET['view']) && $_GET['view'] === 'all'): ?>
+                <a href="index.php?action=list" class="btn btn-secondary">
+                    <i class="fas fa-filter"></i> Mes offres uniquement
+                </a>
+            <?php else: ?>
+                <a href="index.php?action=list&view=all" class="btn btn-secondary">
+                    <i class="fas fa-globe"></i> Toutes les offres
+                </a>
+            <?php endif; ?>
+        </div>
     <?php endif; ?>
 </div>
 
@@ -47,6 +62,13 @@
                 <div class="story-content">
                     <h3><?= htmlspecialchars($offer['title']) ?></h3>
                     
+                    <!-- Afficher le nom de l'organisation -->
+                    <?php if (isset($offer['nom_organisation'])): ?>
+                        <p style="font-size: 13px; color: #888; margin-bottom: 10px;">
+                            <i class="fas fa-building"></i> <?= htmlspecialchars($offer['nom_organisation']) ?>
+                        </p>
+                    <?php endif; ?>
+                    
                     <!-- BARRE DE PROGRESSION (PLACES) -->
                     <div style="margin-bottom: 15px;">
                         <div style="display:flex; justify-content:space-between; font-size:12px; color:#666; margin-bottom:5px;">
@@ -62,15 +84,15 @@
                 </div>
 
                 <div class="story-actions">
-                    <?php if ($user_role === 'organisateur'): ?>
-                        <!-- Actions ORGANISATEUR -->
-                        <a href="index.php?action=list_applications&role=organisateur&offer_id=<?= $offer['id'] ?>" class="btn btn-primary" title="Voir les candidats" style="background-color: var(--violet-admin);">
-                            <i class="fas fa-users"></i>
+                    <?php if ($user_role === 'organisation'): ?>
+                        <!-- Actions ORGANISATION -->
+                        <a href="index.php?action=list_applications&offer_id=<?= $offer['id'] ?>" class="btn btn-primary" title="Voir les candidats" style="background-color: var(--violet-admin);">
+                            <i class="fas fa-users"></i> Candidats (<?= $current ?>)
                         </a>
-                        <a href="index.php?action=edit&id=<?= $offer['id'] ?>&role=organisateur" class="btn btn-secondary" title="Modifier">
+                        <a href="index.php?action=edit&id=<?= $offer['id'] ?>" class="btn btn-secondary" title="Modifier">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a href="index.php?action=delete&id=<?= $offer['id'] ?>&role=organisateur" class="btn btn-danger" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette offre ?');">
+                        <a href="index.php?action=delete&id=<?= $offer['id'] ?>" class="btn btn-danger" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette offre ?');">
                             <i class="fas fa-trash"></i>
                         </a>
                     <?php else: ?>
