@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Back Office - PeaceLink</title>
+
+    <link rel="stylesheet" href="../backofficeStyle.css">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="../backoffice.js" defer></script>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="logo">
+                <img src="../mon-logo.png" alt="Logo PeaceLink">
+                <span>PeaceLink</span>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <i class="fa-solid fa-house"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-page="initiatives">
+                <i class="fa-solid fa-hand-holding-heart"></i>
+                <span>Initiatives</span>
+            </a>
+            <a href="#" class="nav-item" data-page="participation">
+                <i class="fa-solid fa-users"></i>
+                <span>Participations</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <i class="fa-solid fa-user-circle user-avatar"></i>
+                <div class="user-info">
+                    <span class="user-name">Admin</span>
+                    <span class="user-role">Back Office</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" id="menu-toggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+            <div class="topbar-right">
+                <button class="icon-btn">
+                    <i class="fa-solid fa-bell"></i>
+                </button>
+                <button class="icon-btn">
+                    <i class="fa-solid fa-envelope"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="content-wrapper" id="content-container">
+
+            <!-- DASHBOARD -->
+            <section id="page-dashboard" class="page-content active">
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="fa-solid fa-hand-holding-heart"></i></div>
+                        <div>
+                            <p class="stat-label">Initiatives validées</p>
+                            <h2 class="stat-value" id="stat-active-initiatives">0</h2>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fa-solid fa-clock"></i></div>
+                        <div>
+                            <p class="stat-label">Initiatives en attente</p>
+                            <h2 class="stat-value" id="stat-pending-initiatives">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- INITIATIVES -->
+            <section id="page-initiatives" class="page-content">
+                <div class="page-header">
+                    <h1>Initiatives</h1>
+                    <p class="page-subtitle">Gérer les initiatives et leurs statuts.</p>
+                </div>
+
+                <div class="table-card">
+                    <h3>Liste des initiatives</h3>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Titre</th>
+                                    <th>Organisation</th>
+                                    <th>Catégorie</th>
+                                    <th>Lieu</th>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="initiatives-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PARTICIPATIONS -->
+            <section id="page-participation" class="page-content">
+                <div class="page-header">
+                    <h1>Participations</h1>
+                    <button id="btn-add-participation" class="btn-primary">
+                        + Ajouter une participation
+                    </button>
+                </div>
+
+                <div class="table-card">
+                    <h3>Liste des participations</h3>
+                    <div id="participation-list" class="table-wrapper"></div>
+                </div>
+
+                <div id="participation-form-container" class="hidden">
+                    <div class="table-card">
+                        <h3 id="participation-form-title">Nouvelle participation</h3>
+
+                        <form id="participation-form">
+
+                            <div class="form-group">
+                                <label>Initiative liée</label>
+                                <select id="p-initiative"></select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Nom complet</label>
+                                <input type="text" id="p-fullname">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="text" id="p-email">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Message</label>
+                                <textarea id="p-message"></textarea>
+                            </div>
+
+                            <input type="hidden" id="p-id">
+
+                            <button type="submit" class="btn-success">Enregistrer</button>
+                            <button type="button" id="btn-cancel-participation" class="btn-secondary">Annuler</button>
+
+                            <p id="participation-error" style="color:red; margin-top:10px;"></p>
+                        </form>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+</body>
+</html>
