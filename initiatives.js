@@ -43,7 +43,6 @@ function showSection(id) {
     sections.forEach(s => s.classList.add("hidden"));
 
     if (!id) {
-        // revenir à la première section (liste)
         const first = document.querySelector(".initiatives-main .mission-section");
         if (first) first.classList.remove("hidden");
     } else {
@@ -73,7 +72,7 @@ function renderEventsList() {
 
     container.innerHTML = "";
 
-    // Filtrer selon le rôle : Client ne voit que "validé", Admin/Org voient tout
+    // Filtrer selon le rôle
     let visible = events.filter(e => currentRole !== "client" || e.status === "validé");
 
     // Récupération des filtres
@@ -99,7 +98,6 @@ function renderEventsList() {
         const card = document.createElement("article");
         card.className = "mission-card event-card";
 
-        // Construction de la carte HTML
         card.innerHTML = `
             <h3>${evt.title}</h3>
             <p class="event-meta">
@@ -114,7 +112,6 @@ function renderEventsList() {
             </button>
         `;
 
-        // Actions Organisation / Admin
         if (currentRole === "admin" || (currentRole === "organisation" && evt.org_id === currentOrgId)) {
             const actions = document.createElement("div");
             actions.className = "event-admin-inline";
@@ -124,21 +121,17 @@ function renderEventsList() {
                 createBtn("Supprimer", "btn-danger", () => deleteEvent(evt.id))
             );
 
-            // Validation Admin
             if (currentRole === "admin" && evt.status === "en_attente") {
                 actions.append(
                     createBtn("Valider", "btn-success", () => updateEventStatus(evt.id, "validé")),
                     createBtn("Refuser", "btn-danger", () => updateEventStatus(evt.id, "refusé"))
                 );
             }
-
             card.appendChild(actions);
         }
-
         container.appendChild(card);
     });
 
-    // Ajouter les écouteurs sur les boutons "Voir détails"
     document.querySelectorAll(".btn-view-event").forEach(btn =>
         btn.addEventListener("click", () => openEventDetail(btn.dataset.id))
     );
@@ -152,7 +145,6 @@ function openInlineEditor(id) {
 
     if (openedEditCard) openedEditCard.remove();
 
-    // Trouver la carte DOM correspondante
     const card = [...document.querySelectorAll(".event-card")]
         .find(c => c.querySelector(".btn-view-event")?.dataset.id == id);
 
@@ -195,7 +187,7 @@ function openInlineEditor(id) {
 }
 
 
-// ===================== API : UPDATE EVENT =====================
+// ===================== API : UPDATE, STATUS, DELETE =====================
 async function updateEvent(data) {
     try {
         const res = await fetch(API_URL_EVENTS + "?action=update", {
@@ -203,17 +195,12 @@ async function updateEvent(data) {
             headers: { "Content-Type": "application/json" },
             body   : JSON.stringify(data)
         });
-
         const r = await res.json();
         if (r.success) await fetchEvents();
-        else alert("Erreur lors de la mise à jour : " + (r.error || "Inconnue"));
-    } catch (e) {
-        console.error("Erreur update :", e);
-    }
+        else alert("Erreur maj : " + (r.error || "Inconnue"));
+    } catch (e) { console.error("Erreur update :", e); }
 }
 
-
-// ===================== API : UPDATE STATUS =====================
 async function updateEventStatus(id, status) {
     try {
         const res = await fetch(API_URL_EVENTS + "?action=updateStatus", {
@@ -221,33 +208,22 @@ async function updateEventStatus(id, status) {
             headers: { "Content-Type": "application/json" },
             body   : JSON.stringify({ eventId: id, status })
         });
-
         const r = await res.json();
         if (r.success) await fetchEvents();
-        else alert("Erreur changement statut.");
-    } catch (e) {
-        console.error("Erreur statut :", e);
-    }
+    } catch (e) { console.error("Erreur statut :", e); }
 }
 
-
-// ===================== API : DELETE EVENT =====================
 async function deleteEvent(id) {
     if (!confirm("Supprimer cette initiative ?")) return;
-
     try {
         const res = await fetch(API_URL_EVENTS + "?action=delete", {
             method : "POST",
             headers: { "Content-Type": "application/json" },
             body   : JSON.stringify({ id })
         });
-
         const r = await res.json();
         if (r.success) await fetchEvents();
-        else alert("Erreur suppression.");
-    } catch (e) {
-        console.error("Erreur suppression :", e);
-    }
+    } catch (e) { console.error("Erreur suppression :", e); }
 }
 
 
@@ -260,7 +236,6 @@ async function openEventDetail(id) {
     const feedback = document.getElementById("participation-feedback");
     const partForm = document.querySelector(".participation-form-wrapper");
 
-    // Affichage des infos
     card.innerHTML = `
         <h2>${currentEvent.title}</h2>
         <p class="event-meta">
@@ -271,14 +246,9 @@ async function openEventDetail(id) {
         <p><strong>Organisation :</strong> ${currentEvent.created_by || "Anonyme"}</p>
     `;
 
-    // Reset formulaire
     if (partForm) partForm.style.display = "none";
-    if (feedback) {
-        feedback.textContent = "";
-        feedback.style.color = "";
-    }
+    if (feedback) { feedback.textContent = ""; feedback.style.color = ""; }
 
-    // Gestion de l'affichage du formulaire de participation
     if (currentRole === "client" && currentEvent.status === "validé") {
         const count = await fetchParticipationCount(currentEvent.id);
         const placesRestantes = currentEvent.capacity - count;
@@ -293,7 +263,6 @@ async function openEventDetail(id) {
             if (partForm) partForm.style.display = "block";
         }
     }
-
     showSection("event-detail-section");
 }
 
@@ -307,15 +276,8 @@ async function handleParticipationSubmit(e) {
     const mail = document.getElementById("participant-email")?.value.trim();
     const msg  = document.getElementById("participant-message")?.value.trim();
 
-    if (!currentEvent) {
-        if (fb) { fb.textContent = "Erreur : Aucune initiative sélectionnée."; fb.style.color = "red"; }
-        return;
-    }
-
-    if (!name || !mail) {
-        if (fb) { fb.textContent = "Nom et email obligatoires."; fb.style.color = "red"; }
-        return;
-    }
+    if (!currentEvent) { if (fb) { fb.textContent = "Erreur initiative."; fb.style.color = "red"; } return; }
+    if (!name || !mail) { if (fb) { fb.textContent = "Nom et email obligatoires."; fb.style.color = "red"; } return; }
 
     try {
         const res = await fetch(API_URL_PART + "?action=create", {
@@ -328,28 +290,24 @@ async function handleParticipationSubmit(e) {
                 message : msg || ""
             })
         });
-
         const data = await res.json();
 
         if (data.success) {
-            if (fb) { fb.textContent = "Participation enregistrée avec succès !"; fb.style.color = "green"; }
+            if (fb) { fb.textContent = "Participation enregistrée !"; fb.style.color = "green"; }
             const form = document.getElementById("participation-form");
             if (form) form.reset();
-            openEventDetail(currentEvent.id); // Recharger pour maj compteur
+            openEventDetail(currentEvent.id);
         } else {
-            if (fb) { fb.textContent = data.error || "Erreur lors de l'enregistrement."; fb.style.color = "red"; }
+            if (fb) { fb.textContent = data.error || "Erreur."; fb.style.color = "red"; }
         }
-
     } catch (err) {
         console.error("Erreur participation :", err);
         if (fb) { fb.textContent = "Erreur réseau."; fb.style.color = "red"; }
     }
 }
-
 function setupParticipationForm() {
     const form  = document.getElementById("participation-form");
-    if (!form) return;
-    form.addEventListener("submit", handleParticipationSubmit);
+    if (form) form.addEventListener("submit", handleParticipationSubmit);
 }
 
 
@@ -360,7 +318,6 @@ function setupCreateEventForm() {
 
     form.addEventListener("submit", async e => {
         e.preventDefault();
-
         const fb   = document.getElementById("create-event-feedback");
         const title = document.getElementById("event-title").value.trim();
         const cat   = document.getElementById("event-category").value;
@@ -371,50 +328,38 @@ function setupCreateEventForm() {
         const org   = document.getElementById("event-org-id").value.trim();
 
         if (!title || !cat || !loc || !date || !cap || !desc || !org) {
-            if (fb) { fb.textContent = "Tous les champs sont obligatoires."; fb.style.color = "red"; }
-            return;
+            if (fb) { fb.textContent = "Tous les champs sont obligatoires."; fb.style.color = "red"; } return;
         }
-
-        if (!currentOrgId && currentRole === "organisation") {
-             currentOrgId = org; 
-        }
+        if (!currentOrgId && currentRole === "organisation") currentOrgId = org; 
 
         try {
             const res = await fetch(API_URL_EVENTS + "?action=create", {
                 method : "POST",
                 headers: { "Content-Type": "application/json" },
                 body   : JSON.stringify({
-                    title,
-                    category   : cat,
-                    location   : loc,
-                    date,
-                    capacity   : cap,
-                    description: desc,
-                    created_by : "Organisation " + org,
-                    org_id     : org
+                    title, category: cat, location: loc, date, capacity: cap, description: desc,
+                    created_by: "Organisation " + org, org_id: org
                 })
             });
-
             const r = await res.json();
 
             if (r.success) {
-                if (fb) { fb.textContent = "Initiative créée avec succès (en attente de validation)."; fb.style.color = "green"; }
+                if (fb) { fb.textContent = "Initiative créée (en attente)."; fb.style.color = "green"; }
                 form.reset();
                 await fetchEvents();
                 setTimeout(() => showSection(""), 1500); 
             } else {
                 if (fb) { fb.textContent = r.error || "Erreur."; fb.style.color = "red"; }
             }
-
         } catch (err) {
-            console.error("Erreur création initiative :", err);
+            console.error("Erreur création :", err);
             if (fb) { fb.textContent = "Erreur réseau."; fb.style.color = "red"; }
         }
     });
 }
 
 
-// ===================== RÔLES & INTERFACE =====================
+// ===================== RÔLES & FILTRES & ADMIN =====================
 function setupRoleSwitcher() {
     const select    = document.getElementById("role-select");
     const createBtn = document.getElementById("btn-open-create");
@@ -424,21 +369,16 @@ function setupRoleSwitcher() {
 
     function applyRole(role) {
         currentRole = role;
-        // Bouton créer visible pour Organisation et Admin
         if (createBtn) createBtn.style.display = (role === "organisation" || role === "admin") ? "inline-flex" : "none";
-        
-        // Section validation visible seulement pour admin
         if (adminSec) adminSec.classList.toggle("hidden", role !== "admin");
-        
         renderEventsList();
         renderAdminList();
     }
 
     select.addEventListener("change", () => {
         const role = select.value;
-
         if (role === "organisation") {
-            let id = prompt("Veuillez entrer votre ID Organisation (simulation) :");
+            let id = prompt("ID Organisation (simulation) :");
             if (!id || id.trim() === "") {
                 alert("ID requis. Retour au rôle Client.");
                 select.value = "client";
@@ -446,18 +386,12 @@ function setupRoleSwitcher() {
                 return;
             }
             currentOrgId = id.trim();
-        } else {
-            currentOrgId = null;
-        }
-
+        } else { currentOrgId = null; }
         applyRole(role);
     });
-
     applyRole(select.value);
 }
 
-
-// ===================== FILTRES & NAVIGATION =====================
 function setupFilters() {
     const btn = document.getElementById("btn-apply-filters");
     if (btn) btn.addEventListener("click", renderEventsList);
@@ -467,48 +401,30 @@ function setupNavigationButtons() {
     const openCreate  = document.getElementById("btn-open-create");
     const closeCreate = document.getElementById("btn-close-create");
     const backToList  = document.getElementById("btn-back-to-list");
-
     if (openCreate)  openCreate.onclick  = () => showSection("event-create-section");
     if (closeCreate) closeCreate.onclick = () => showSection("");
     if (backToList)  backToList.onclick  = () => showSection("");
 }
 
-
-// ===================== SECTION ADMIN (VALIDATION) =====================
 function renderAdminList() {
     const container = document.getElementById("admin-events-list");
     if (!container) return;
-
     container.innerHTML = "";
-
     const pending = events.filter(e => e.status === "en_attente");
-
-    if (!pending.length) {
-        container.innerHTML = "<p>Aucune initiative en attente de validation.</p>";
-        return;
-    }
+    if (!pending.length) { container.innerHTML = "<p>Aucune initiative en attente.</p>"; return; }
 
     pending.forEach(evt => {
         const card = document.createElement("article");
         card.className = "mission-card event-card";
-        card.style.borderColor = "orange"; // Visuel pour dire "attention"
-
-        card.innerHTML = `
-            <h3>${evt.title}</h3>
-            <p>${evt.category} - ${evt.location}</p>
-            <p>Organisation: ${evt.created_by}</p>
-            <p><em>${evt.description}</em></p>
-        `;
-
+        card.style.borderColor = "orange"; 
+        card.innerHTML = `<h3>${evt.title}</h3><p>${evt.category} - ${evt.location}</p><p>Org: ${evt.created_by}</p>`;
         const actions = document.createElement("div");
         actions.className = "event-card-footer";
-
         actions.append(
             createBtn("Valider", "btn-success", () => updateEventStatus(evt.id, "validé")),
             createBtn("Refuser", "btn-danger", () => updateEventStatus(evt.id, "refusé")),
             createBtn("Supprimer", "btn-danger", () => deleteEvent(evt.id))
         );
-
         card.appendChild(actions);
         container.appendChild(card);
     });
@@ -516,10 +432,7 @@ function renderAdminList() {
 
 
 /* ========================================================================
-   ===================== CHATBOT SIMULÉ (SANS CLÉ API) ====================
-   ======================================================================== 
-   Ce chatbot répond automatiquement en analysant les mots-clés.
-   Il n'utilise PAS d'API externe (Google/OpenAI) pour éviter les erreurs.
+   ===================== CHATBOT INTELLIGENT (SIMULÉ) =====================
    ======================================================================== */
 
 // --- Éléments du DOM ---
@@ -538,65 +451,110 @@ if (botClose) botClose.addEventListener("click", () => botBox.classList.add("hid
 function addMessage(text, sender) {
     const msg = document.createElement("div");
     msg.className = sender === "user" ? "msg user-msg" : "msg bot-msg";
-    msg.innerHTML = text; // Autorise le HTML (gras, br)
+    msg.innerHTML = text; // Autorise le HTML
     botMessages.appendChild(msg);
     botMessages.scrollTop = botMessages.scrollHeight;
 }
 
-// --- LOGIQUE INTELLIGENTE SIMULÉE ---
+// --- LOGIQUE CERVEAU DU BOT ---
 function getSimulatedResponse(input) {
     const text = input.toLowerCase();
     
     // 1. Salutations
-    if (text.includes("bonjour") || text.includes("salut") || text.includes("hello") || text.includes("ça va")) {
-        return "Bonjour ! 👋 Je suis l'assistant PeaceLink. Comment puis-je vous aider aujourd'hui ? (Initiatives, Connexion...)";
+    if (text.includes("bonjour") || text.includes("salut") || text.includes("hello")) {
+        return "Bonjour ! 👋 Je suis l'assistant PeaceLink. Cliquez sur un bouton ci-dessus ou posez-moi une question.";
     }
 
-    // 2. Problèmes de Connexion (Login, Mot de passe)
-    if (text.includes("connexion") || text.includes("connect") || text.includes("login") || text.includes("mot de passe") || text.includes("compte")) {
+    // 2. Problèmes de Connexion
+    if (text.includes("connexion") || text.includes("connect") || text.includes("mot de passe")) {
         return `
         <strong>Problème de connexion ?</strong> 🔐<br>
-        Voici quelques étapes pour vous aider :<br>
-        1. Vérifiez que votre email et mot de passe sont corrects.<br>
-        2. Si vous avez oublié votre mot de passe, utilisez le lien "Mot de passe oublié" sur la page de login.<br>
-        3. Si le problème persiste, contactez l'admin via le formulaire de contact.
+        1. Vérifiez vos identifiants.<br>
+        2. Utilisez "Mot de passe oublié".<br>
+        3. Contactez l'admin si ça persiste.
         `;
     }
 
-    // 3. Demande d'initiatives ou Recherche
-    if (text.includes("initiative") || text.includes("événement") || text.includes("event") || text.includes("activit") || text.includes("cherch")) {
-        // On récupère les vrais événements chargés
-        const validEvents = events.filter(e => e.status === 'validé');
-        
-        if (validEvents.length === 0) return "Désolé, il n'y a aucune initiative validée pour le moment.";
+    // 3. Citations (Easter Egg)
+    if (text.includes("citation") || text.includes("inspire") || text.includes("paix")) {
+        const quotes = [
+            "La paix commence par un sourire. – Mère Teresa",
+            "Soyez le changement que vous voulez voir dans le monde. – Gandhi",
+            "Il n'y a pas de chemin vers la paix, la paix est le chemin. – Gandhi"
+        ];
+        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        return `🕊️ <em>"${randomQuote}"</em>`;
+    }
 
-        let response = "Voici les initiatives disponibles actuellement :<br><br>";
-        validEvents.slice(0, 3).forEach(e => {
-            response += `🌱 <strong>${e.title}</strong> (${e.category})<br>📍 ${e.location} - 📅 ${formatDate(e.date)}<br><br>`;
+    // 4. Recherche par VILLE (Géolocalisation simulée)
+    const validEvents = events.filter(e => e.status === 'validé');
+    const cities = [...new Set(validEvents.map(e => e.location.toLowerCase()))];
+    const foundCity = cities.find(city => text.includes(city));
+
+    if (foundCity) {
+        const cityEvents = validEvents.filter(e => e.location.toLowerCase().includes(foundCity));
+        let response = `🔎 Initiatives à <strong>${foundCity.toUpperCase()}</strong> :<br>`;
+        cityEvents.forEach(e => {
+            response += `
+            <div style="background:white; border:1px solid #eee; padding:5px; margin:5px 0; border-radius:5px; font-size:13px;">
+                🌱 <strong>${e.title}</strong><br>
+                📅 ${formatDate(e.date)}<br>
+                <button class="chat-action-btn" onclick="openEventDetail(${e.id})">Voir</button>
+            </div>`;
         });
-        return response + "Cliquez sur 'Voir les détails' pour participer !";
+        return response;
     }
 
-    // 4. Conseil / Recommandation / Ennui
-    if (text.includes("conseil") || text.includes("suggèr") || text.includes("ennui") || text.includes("quoi faire")) {
-        const validEvents = events.filter(e => e.status === 'validé');
+    // 5. Recherche par CATÉGORIE
+    if (text.includes("écologie") || text.includes("nature") || text.includes("vert")) {
+        const ecoEvents = validEvents.filter(e => e.category === 'Écologie');
+        if (!ecoEvents.length) return "Pas d'initiative écologique pour l'instant.";
+        let res = "🌿 <strong>Initiatives Écologie :</strong><br>";
+        ecoEvents.forEach(e => {
+            res += `<div style="margin-top:5px;">- ${e.title} <button class="chat-action-btn" onclick="openEventDetail(${e.id})">Voir</button></div>`;
+        });
+        return res;
+    }
+    if (text.includes("solidarité") || text.includes("social")) {
+        const solEvents = validEvents.filter(e => e.category === 'Solidarité');
+        if (!solEvents.length) return "Pas d'initiative solidaire pour l'instant.";
+        let res = "🤝 <strong>Initiatives Solidarité :</strong><br>";
+        solEvents.forEach(e => {
+            res += `<div style="margin-top:5px;">- ${e.title} <button class="chat-action-btn" onclick="openEventDetail(${e.id})">Voir</button></div>`;
+        });
+        return res;
+    }
+
+    // 6. Demande générale Initiatives
+    if (text.includes("initiative") || text.includes("événement") || text.includes("voir")) {
+        if (validEvents.length === 0) return "Aucune initiative validée pour le moment.";
+        let response = "Voici quelques initiatives :<br>";
+        validEvents.slice(0, 3).forEach(e => {
+            response += `
+            <div style="background:white; border:1px solid #eee; padding:5px; margin:5px 0; border-radius:5px; font-size:13px;">
+                🌱 <strong>${e.title}</strong> (${e.category})<br>
+                📍 ${e.location}<br>
+                <button class="chat-action-btn" onclick="openEventDetail(${e.id})">Voir & Participer</button>
+            </div>`;
+        });
+        return response;
+    }
+
+    // 7. Conseil / Hasard
+    if (text.includes("conseil") || text.includes("ennui") || text.includes("quoi faire")) {
         if (validEvents.length > 0) {
-            // Prend un événement au hasard
-            const randomEvent = validEvents[Math.floor(Math.random() * validEvents.length)];
+            const r = validEvents[Math.floor(Math.random() * validEvents.length)];
             return `
-            Tu ne sais pas quoi faire ? 🤔<br>
-            Je te conseille vivement cette initiative :<br>
-            ✨ <strong>${randomEvent.title}</strong> !<br>
-            C'est une action de type <em>${randomEvent.category}</em> qui se déroule à ${randomEvent.location}.<br>
-            Ça te tente ?
+            💡 <strong>Mon conseil du jour :</strong><br>
+            Découvrez l'initiative <em>"${r.title}"</em> !<br>
+            C'est à ${r.location} le ${formatDate(r.date)}.<br>
+            <button class="chat-action-btn" onclick="openEventDetail(${r.id})">Regarder ça</button>
             `;
-        } else {
-            return "Je n'ai pas d'initiative à te conseiller pour le moment, reviens plus tard !";
         }
+        return "Pas d'initiative à conseiller pour l'instant.";
     }
 
-    // 5. Par défaut
-    return "Je ne suis pas sûr de comprendre. Pouvez-vous reformuler ? Je peux parler des <strong>initiatives</strong> ou vous aider pour la <strong>connexion</strong>.";
+    return "Je n'ai pas compris. Essayez 'Initiatives', 'Connexion', 'Écologie' ou 'Tunis' (par exemple).";
 }
 
 // --- Envoi du message ---
@@ -607,28 +565,31 @@ function sendMessage() {
     addMessage(userText, "user");
     botInput.value = "";
     
-    // Simulation d'un délai de réflexion ("typing...")
-    const loadingId = "loading-" + Date.now();
+    // Simulation attente
+    const loadingId = "load-" + Date.now();
     const loadingMsg = document.createElement("div");
     loadingMsg.className = "msg bot-msg";
     loadingMsg.id = loadingId;
-    loadingMsg.innerText = "PeaceLink réfléchit...";
+    loadingMsg.innerText = "Writing...";
     botMessages.appendChild(loadingMsg);
     botMessages.scrollTop = botMessages.scrollHeight;
 
     setTimeout(() => {
-        // Supprimer le message de chargement
         const loader = document.getElementById(loadingId);
         if (loader) loader.remove();
-
-        // Obtenir la réponse simulée
         const response = getSimulatedResponse(userText);
         addMessage(response, "bot");
-
-    }, 800); // Délai de 800ms pour faire réaliste
+    }, 600);
 }
 
-// --- Listeners Chatbot ---
+// --- Fonctions Globales pour le Chat (Quick Replies) ---
+window.sendQuickReply = function(text) {
+    const input = document.getElementById("chatbot-input");
+    if(input) input.value = text;
+    sendMessage();
+};
+
+// --- Listeners ---
 if (botSend) botSend.addEventListener("click", sendMessage);
 if (botInput) {
     botInput.addEventListener("keypress", e => {
@@ -636,23 +597,46 @@ if (botInput) {
     });
 }
 
+// --- Injection des styles CSS du chat (pour éviter de toucher au CSS) ---
+function injectChatStyles() {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .chat-btn {
+            background-color: #5DADE2; color: white; border: none; padding: 5px 10px;
+            margin: 3px; border-radius: 15px; cursor: pointer; font-size: 12px; transition: 0.2s;
+        }
+        .chat-btn:hover { background-color: #3498DB; }
+        .chat-action-btn {
+            background-color: #7BD389; color: white; border: none; padding: 3px 8px;
+            border-radius: 4px; cursor: pointer; font-size: 11px; margin-top:3px;
+        }
+        .chat-action-btn:hover { background-color: #68c37a; }
+    `;
+    document.head.appendChild(style);
+}
 
 // ===================== INITIALISATION GLOBALE =====================
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Configuration des boutons et formulaires
     setupRoleSwitcher();
     setupCreateEventForm();
     setupParticipationForm();
     setupNavigationButtons();
     setupFilters();
+    injectChatStyles(); // Ajout des styles boutons chat
     
-    // 2. Chargement des données initiales
     await fetchEvents();
     
-    // 3. Message d'accueil du bot (optionnel)
+    // Message d'accueil avec Quick Replies
     setTimeout(() => {
         if (botMessages && botMessages.children.length === 0) {
-            addMessage("Bonjour ! Je suis l'assistant PeaceLink. Je peux vous aider à trouver une initiative ou résoudre un problème de connexion. 😊", "bot");
+            const welcomeHTML = `
+                Bonjour ! Je suis l'assistant PeaceLink. 😊<br>
+                Je peux vous aider sur ces sujets :<br><br>
+                <button class="chat-btn" onclick="sendQuickReply('Voir les initiatives')">🌱 Initiatives</button>
+                <button class="chat-btn" onclick="sendQuickReply('Problème de connexion')">🔐 Connexion</button>
+                <button class="chat-btn" onclick="sendQuickReply('Donne-moi un conseil')">💡 Conseil</button>
+            `;
+            addMessage(welcomeHTML, "bot");
         }
     }, 1000);
 });
