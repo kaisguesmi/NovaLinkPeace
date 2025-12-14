@@ -301,6 +301,10 @@ session_start();
             <i class="fa-solid fa-user-lock"></i> Se connecter avec Face ID
         </button>
 
+        <p style="text-align:center; color:#7f8c8d; font-size:13px; margin-top:10px;">
+            Face ID disponible pour les clients, experts et administrateurs.
+        </p>
+
         <div class="links">
             <p style="color: #7f8c8d; margin-bottom: 10px;">Pas encore de compte ?</p>
             <a href="inscription.php"><i class="fa-solid fa-user-plus"></i> Créer un compte</a>

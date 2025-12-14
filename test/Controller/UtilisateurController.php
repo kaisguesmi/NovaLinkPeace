@@ -631,61 +631,101 @@ function handleAjaxGetPhoto($utilisateur, $db) {
     
     try {
         header('Content-Type: application/json');
-        
-        $email = $_POST['email'] ?? '';
-        
+
+        $email = trim($_POST['email'] ?? '');
+        $adminPhotoFilename = 'admin_face_id.jpg'; // fichier attendu dans View/uploads
+
         if (empty($email)) {
             echo json_encode(['success' => false, 'message' => 'Email requis']);
             exit();
         }
-        
-        // Récupérer l'utilisateur par email
+
+        // Identifier le compte (Utilisateur ou Admin autonome)
+        $role = null;
+        $userId = null;
+        $photoFile = null;
+        $displayName = null;
+
         $user = $utilisateur->findByEmail($email);
-        
-        if (!$user) {
+        if ($user) {
+            $userId = (int) $user['id_utilisateur'];
+            $role = $utilisateur->getUserRole($userId);
+        } else {
+            $admin = $utilisateur->findAdminByEmail($email);
+            if ($admin) {
+                $role = 'admin';
+                $userId = (int) $admin['id_admin'];
+            }
+        }
+
+        if (!$role) {
             echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable']);
             exit();
         }
-        
-        // Vérifier le rôle (seuls les clients peuvent utiliser Face ID)
-        $role = $utilisateur->getUserRole($user['id_utilisateur']);
-        
-        error_log("Role trouvé: " . $role);
-        
-        if ($role !== 'client') {
-            echo json_encode(['success' => false, 'message' => 'Face ID disponible uniquement pour les clients']);
+
+        // Autoriser clients, experts et administrateurs
+        if (!in_array($role, ['client', 'expert', 'admin'], true)) {
+            echo json_encode(['success' => false, 'message' => 'Face ID disponible pour les clients, experts et administrateurs']);
             exit();
         }
-        
-        // Récupérer la photo de profil et le nom depuis Utilisateur et Client
-        $stmt = $db->prepare("
-            SELECT u.photo_profil, c.nom_complet 
-            FROM Utilisateur u
-            LEFT JOIN Client c ON u.id_utilisateur = c.id_utilisateur
-            WHERE u.id_utilisateur = ?
-        ");
-        $stmt->execute([$user['id_utilisateur']]);
-        $userData = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if (!$userData || empty($userData['photo_profil'])) {
-            echo json_encode(['success' => false, 'message' => 'Aucune photo de profil trouvée. Veuillez ajouter une photo dans votre profil.']);
-            exit();
+
+        // Récupérer la photo selon le rôle
+        if ($role === 'admin') {
+            $photoFile = $adminPhotoFilename;
+            $displayName = 'Administrateur';
+        } elseif ($role === 'expert') {
+            $stmt = $db->prepare("
+                SELECT u.photo_profil, e.nom_complet AS display_name
+                FROM Utilisateur u
+                JOIN Expert e ON u.id_utilisateur = e.id_utilisateur
+                WHERE u.id_utilisateur = ?
+            ");
+            $stmt->execute([$userId]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userData || empty($userData['photo_profil'])) {
+                echo json_encode(['success' => false, 'message' => 'Aucune photo de profil trouvée pour cet expert.']);
+                exit();
+            }
+
+            $photoFile = $userData['photo_profil'];
+            $displayName = $userData['display_name'] ?? $email;
+        } else { // client par défaut
+            $stmt = $db->prepare("
+                SELECT u.photo_profil, c.nom_complet AS display_name
+                FROM Utilisateur u
+                JOIN Client c ON u.id_utilisateur = c.id_utilisateur
+                WHERE u.id_utilisateur = ?
+            ");
+            $stmt->execute([$userId]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userData || empty($userData['photo_profil'])) {
+                echo json_encode(['success' => false, 'message' => 'Aucune photo de profil trouvée. Veuillez ajouter une photo dans votre profil.']);
+                exit();
+            }
+
+            $photoFile = $userData['photo_profil'];
+            $displayName = $userData['display_name'] ?? $email;
         }
-        
+
         // Vérifier que le fichier existe
-        $photoPath = __DIR__ . '/../View/uploads/' . $userData['photo_profil'];
+        $photoPath = __DIR__ . '/../View/uploads/' . $photoFile;
         error_log("Chemin photo: " . $photoPath);
         error_log("Fichier existe: " . (file_exists($photoPath) ? 'OUI' : 'NON'));
-        
+
         if (!file_exists($photoPath)) {
-            echo json_encode(['success' => false, 'message' => 'Fichier photo introuvable']);
+            $message = ($role === 'admin')
+                ? 'Photo Face ID admin introuvable dans View/uploads (' . $photoFile . ').'
+                : 'Fichier photo introuvable';
+            echo json_encode(['success' => false, 'message' => $message]);
             exit();
         }
-        
+
         echo json_encode([
-            'success' => true, 
-            'photo' => $userData['photo_profil'],
-            'nom_complet' => $userData['nom_complet'] ?? $user['email']
+            'success' => true,
+            'photo' => $photoFile,
+            'nom_complet' => $displayName
         ]);
         exit();
         
@@ -712,65 +752,79 @@ function handleLoginWithFace($utilisateur, $db) {
     
     try {
         header('Content-Type: application/json');
-        
-        $email = $_POST['email'] ?? '';
-        
+
+        $email = trim($_POST['email'] ?? '');
+
         if (empty($email)) {
             error_log("Erreur: Email vide");
             echo json_encode(['success' => false, 'message' => 'Email requis']);
             exit();
         }
-        
-        // Récupérer l'utilisateur
+
+        // Identifier le compte (Utilisateur ou Admin autonome)
+        $role = null;
+        $userId = null;
+        $username = null;
+
         $user = $utilisateur->findByEmail($email);
-        
-        if (!$user) {
+        if ($user) {
+            $userId = (int) $user['id_utilisateur'];
+            $role = $utilisateur->getUserRole($userId);
+            error_log("Utilisateur trouvé: ID " . $userId . " | rôle " . $role);
+        } else {
+            $admin = $utilisateur->findAdminByEmail($email);
+            if ($admin) {
+                $role = 'admin';
+                $userId = (int) $admin['id_admin'];
+                error_log("Compte admin autonome trouvé: ID " . $userId);
+            }
+        }
+
+        if (!$role) {
             error_log("Erreur: Utilisateur introuvable pour email: " . $email);
             echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable']);
             exit();
         }
-        
-        error_log("Utilisateur trouvé: ID " . $user['id_utilisateur']);
-        
-        // Vérifier le rôle
-        $role = $utilisateur->getUserRole($user['id_utilisateur']);
-        error_log("Rôle: " . $role);
-        
-        if ($role !== 'client') {
-            error_log("Erreur: Rôle invalide (pas client)");
-            echo json_encode(['success' => false, 'message' => 'Face ID disponible uniquement pour les clients']);
+
+        if (!in_array($role, ['client', 'expert', 'admin'], true)) {
+            error_log("Erreur: Rôle non autorisé pour Face ID: " . $role);
+            echo json_encode(['success' => false, 'message' => 'Face ID disponible pour les clients, experts et administrateurs']);
             exit();
         }
-        
-        // Vérifier si l'utilisateur est banni (TODO: implémenter isBanned() dans Utilisateur.php)
-        // if ($utilisateur->isBanned($user['id_utilisateur'])) {
-        //     error_log("Erreur: Utilisateur banni");
-        //     echo json_encode(['success' => false, 'message' => 'Votre compte est banni']);
-        //     exit();
-        // }
-        
-        // Connexion réussie - Créer la session
-        $_SESSION['user_id'] = $user['id_utilisateur'];
-        $_SESSION['email'] = $user['email'];
+
+        // Préparer les infos de session selon le rôle
+        switch ($role) {
+            case 'expert':
+                $expertDetails = $utilisateur->findExpertById($userId);
+                $username = $expertDetails['nom_complet'] ?? 'Expert';
+                break;
+            case 'client':
+                $clientDetails = $utilisateur->findClientById($userId);
+                $username = $clientDetails['nom_complet'] ?? 'Client';
+                break;
+            case 'admin':
+                $username = 'Administrateur';
+                break;
+        }
+
+        $_SESSION['user_id'] = $userId;
+        $_SESSION['email'] = $email;
         $_SESSION['role'] = $role;
-        
+        $_SESSION['username'] = $username;
+
         error_log("Session créée - user_id: " . $_SESSION['user_id']);
         error_log("Session role: " . $_SESSION['role']);
-        
+
         // Déterminer la redirection selon le rôle
         $redirect = "index.php";
-        if ($role === 'client') {
-            $redirect = "index.php";
-        } elseif ($role === 'organisation') {
-            $redirect = "index.php";
-        } elseif ($role === 'admin') {
+        if ($role === 'admin') {
             $redirect = "../BackOffice/backoffice.php";
         }
-        
+
         error_log("Redirection vers: " . $redirect);
-        
+
         echo json_encode([
-            'success' => true, 
+            'success' => true,
             'message' => 'Connexion réussie avec Face ID !',
             'redirect' => $redirect
         ]);
