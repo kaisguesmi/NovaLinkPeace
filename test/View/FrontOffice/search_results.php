@@ -8,7 +8,7 @@ $keyword = $_SESSION['search_keyword'] ?? '';
 <head>
     <meta charset="UTF-8">
     <title>Résultats pour "<?php echo htmlspecialchars($keyword); ?>"</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .results-container { max-width: 800px; margin: 100px auto; padding: 20px; }

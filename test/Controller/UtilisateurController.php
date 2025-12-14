@@ -3,7 +3,6 @@ session_start();
 
 include_once __DIR__ . '/../Model/Database.php';
 include_once __DIR__ . '/../Model/Utilisateur.php';
-include_once __DIR__ . '/../View/uploads/';
 
 // Initialisation
 $database = new Database();
@@ -155,6 +154,17 @@ function handleLogin($utilisateur) {
         exit();
     }
 
+    // --- CAS ADMIN AUTONOME (table admin sans lien utilisateur) ---
+    $adminFound = $utilisateur->findAdminByEmail($email);
+    if ($adminFound && password_verify($password, $adminFound['mot_de_passe_hash'])) {
+        $_SESSION['user_id'] = $adminFound['id_admin'];
+        $_SESSION['email'] = $adminFound['email'];
+        $_SESSION['role'] = 'admin';
+        $_SESSION['username'] = 'Administrateur';
+        header("Location: ../View/BackOffice/backoffice.php");
+        exit();
+    }
+
     // 1. Vérifier email et mot de passe (Table Utilisateur)
     $userFound = $utilisateur->findByEmail($email);
 
@@ -209,6 +219,11 @@ function handleLogin($utilisateur) {
             $_SESSION['username'] = $orgaDetails['nom_organisation'];
             header("Location: ../View/FrontOffice/index.php"); 
         } 
+        elseif ($role === 'expert') {
+            $expertDetails = $utilisateur->findExpertById($userFound['id_utilisateur']);
+            $_SESSION['username'] = $expertDetails['nom_complet'];
+            header("Location: ../View/FrontOffice/index.php");
+        }
         elseif ($role === 'client') {
             $clientDetails = $utilisateur->findClientById($userFound['id_utilisateur']);
             $_SESSION['username'] = $clientDetails['nom_complet'];
@@ -254,6 +269,14 @@ function handleUpdateProfile($utilisateur) {
             $_SESSION['username'] = $nom_complet;
         }
     } 
+    elseif ($role === 'expert') {
+        $nom_complet = $_POST['nom_complet'] ?? '';
+        $bio = $_POST['bio'] ?? '';
+        $specialite = $_POST['specialite'] ?? '';
+        if ($utilisateur->updateExpert($id, $nom_complet, $bio, $specialite)) {
+            $_SESSION['username'] = $nom_complet;
+        }
+    }
     elseif ($role === 'organisation') {
         $nom_orga = $_POST['nom_organisation'] ?? '';
         $adresse = $_POST['adresse'] ?? '';
@@ -380,6 +403,9 @@ function handleShowPublicProfile($utilisateur) {
     if ($role === 'client') {
         $profileData = $utilisateur->findClientById($id);
         $profileData['role_display'] = 'Client';
+    } elseif ($role === 'expert') {
+        $profileData = $utilisateur->findExpertById($id);
+        $profileData['role_display'] = 'Expert ⭐';
     } elseif ($role === 'organisation') {
         $profileData = $utilisateur->findOrganisationById($id);
         $profileData['role_display'] = 'Organisation';

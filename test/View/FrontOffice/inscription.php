@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscription - PeaceLink</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?= time() ?>">
     <style>
         body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(105deg, rgba(93, 173, 226, 0.8), rgba(123, 211, 137, 0.8)); }
         .signup-container { background-color: var(--blanc-pur); padding: 40px; border-radius: var(--border-radius); box-shadow: var(--card-shadow); width: 100%; max-width: 500px; transition: height 0.3s ease; }

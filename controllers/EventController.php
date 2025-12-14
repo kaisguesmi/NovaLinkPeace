@@ -1,7 +1,12 @@
 <?php
 // controllers/EventController.php
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../models/EventModel.php';
+require_once __DIR__ . '/../models/ParticipationModel.php';
 
 class EventController
 {
@@ -15,6 +20,16 @@ class EventController
     // ================= CREATE EVENT =================
     public static function create()
     {
+        if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
+            echo json_encode(['success' => false, 'error' => 'Authentification requise']);
+            return;
+        }
+
+        if (!in_array($_SESSION['role'], ['organisation', 'expert', 'admin'], true)) {
+            echo json_encode(['success' => false, 'error' => 'Rôle non autorisé pour créer une initiative']);
+            return;
+        }
+
         $input = json_decode(file_get_contents("php://input"), true);
 
         if (!$input) {
@@ -28,13 +43,10 @@ class EventController
         $date        = trim($input['date'] ?? '');
         $capacity    = $input['capacity'] ?? null;
         $description = trim($input['description'] ?? '');
-        $created_by  = trim($input['created_by'] ?? '');
-        $org_id      = trim($input['org_id'] ?? '');
 
         if (
             $title === '' || $category === '' || $location === '' ||
-            $date === '' || $description === '' || $created_by === '' ||
-            $org_id === '' || $capacity === null
+            $date === '' || $description === '' || $capacity === null
         ) {
             echo json_encode(['success' => false, 'error' => 'Champs obligatoires manquants']);
             return;
@@ -50,6 +62,8 @@ class EventController
             return;
         }
 
+        $creatorId = (int)$_SESSION['user_id'];
+
         $data = [
             'title'       => $title,
             'category'    => $category,
@@ -57,8 +71,8 @@ class EventController
             'date'        => $date,
             'capacity'    => (int)$capacity,
             'description' => $description,
-            'created_by'  => $created_by,
-            'org_id'      => $org_id
+            'created_by'  => $creatorId,
+            'org_id'      => $creatorId
         ];
 
         $ok = EventModel::createEvent($data);
@@ -192,5 +206,56 @@ class EventController
             'success' => true,
             'recommended' => $recommended
         ]);
+    }
+
+
+    // ====================== PARTICIPATION VIA SESSION =================
+    public static function participate()
+    {
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'error' => 'Connexion requise']);
+            return;
+        }
+
+        if (($_SESSION['role'] ?? '') !== 'client') {
+            echo json_encode(['success' => false, 'error' => 'Seuls les clients peuvent participer']);
+            return;
+        }
+
+        $payload = json_decode(file_get_contents("php://input"), true) ?? [];
+        $eventId = isset($payload['event_id']) ? (int)$payload['event_id'] : (int)($_POST['event_id'] ?? 0);
+        $message = trim($payload['message'] ?? '');
+        $clientId = (int)$_SESSION['user_id'];
+
+        if ($eventId <= 0) {
+            echo json_encode(['success' => false, 'error' => 'ID initiative manquant']);
+            return;
+        }
+
+        $event = EventModel::getEventById($eventId);
+        if (!$event) {
+            echo json_encode(['success' => false, 'error' => 'Initiative introuvable']);
+            return;
+        }
+
+        if (($event['status'] ?? '') !== 'validé') {
+            echo json_encode(['success' => false, 'error' => 'Initiative non validée']);
+            return;
+        }
+
+        $currentCount = ParticipationModel::countByEvent($eventId);
+        $capacity = (int)($event['capacity'] ?? 0);
+        if ($capacity > 0 && $currentCount >= $capacity) {
+            echo json_encode(['success' => false, 'error' => 'Capacité maximale atteinte']);
+            return;
+        }
+
+        if (ParticipationModel::findByEventAndClient($eventId, $clientId)) {
+            echo json_encode(['success' => false, 'error' => 'Déjà inscrit à cette initiative']);
+            return;
+        }
+
+        $ok = ParticipationModel::addParticipation($eventId, $clientId, $message);
+        echo json_encode(['success' => $ok]);
     }
 }

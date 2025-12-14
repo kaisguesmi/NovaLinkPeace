@@ -1,13 +1,15 @@
 // ===================== CONFIGURATION GLOBALE =====================
-const API_URL_EVENTS = "http://localhost/2A4/projet/peacelink/api_events.php";
-const API_URL_PART   = "http://localhost/2A4/projet/peacelink/api_participations.php";
+const API_URL_EVENTS = "../api_events.php";
+const API_URL_PART   = "../api_participations.php";
 
 // ===================== VARIABLES D'ÉTAT =====================
+const sessionInfo = window.PEACELINK_SESSION || {};
+const sessionUserId = sessionInfo.userId || null;
 let events = [];
-let currentRole = "client"; // client | organisation | admin
+let currentRole = sessionInfo.role || "client"; // client | organisation | expert | admin
 let currentEvent = null;
 let openedEditCard = null;
-let currentOrgId = null;
+let currentOrgId = (currentRole === "organisation" || currentRole === "expert") ? (sessionInfo.userId || null) : null;
 
 
 // ===================== CHARGEMENT DES DONNÉES (FETCH) =====================
@@ -112,9 +114,22 @@ function renderEventsList() {
             </button>
         `;
 
-        if (currentRole === "admin" || (currentRole === "organisation" && evt.org_id === currentOrgId)) {
+        if (currentRole === "client" && evt.status === "validé") {
+            const participate = createBtn("Participer", "btn-success", () => openEventDetail(evt.id));
+            card.appendChild(participate);
+        }
+
+        if (currentRole === "admin" || ((currentRole === "organisation" || currentRole === "expert") && evt.org_id === currentOrgId)) {
             const actions = document.createElement("div");
             actions.className = "event-admin-inline";
+
+            // Bouton Voir les participants (pour organisations)
+            if (currentRole === "organisation" || currentRole === "expert") {
+                const viewParticipants = createBtn("👥 Participants", "btn-primary", () => {
+                    window.location.href = `event_participants.php?event_id=${evt.id}`;
+                });
+                actions.appendChild(viewParticipants);
+            }
 
             actions.append(
                 createBtn("Modifier", "btn-secondary", () => openInlineEditor(evt.id)),
@@ -243,11 +258,14 @@ async function openEventDetail(id) {
             ${currentEvent.location} • ${formatDate(currentEvent.date)}
         </p>
         <p class="event-description">${currentEvent.description || "Pas de description."}</p>
-        <p><strong>Organisation :</strong> ${currentEvent.created_by || "Anonyme"}</p>
+        <p><strong>Organisation :</strong> ${currentEvent.organisation_nom || currentEvent.created_by || "Anonyme"}</p>
     `;
 
-    if (partForm) partForm.style.display = "none";
-    if (feedback) { feedback.textContent = ""; feedback.style.color = ""; }
+    if (partForm) partForm.style.display = (currentRole === "client") ? "none" : "block";
+    if (feedback) {
+        feedback.textContent = currentRole === "client" ? "" : "Connectez-vous en tant que client pour participer.";
+        feedback.style.color = currentRole === "client" ? "" : "red";
+    }
 
     if (currentRole === "client" && currentEvent.status === "validé") {
         const count = await fetchParticipationCount(currentEvent.id);
@@ -272,21 +290,24 @@ async function handleParticipationSubmit(e) {
     if (e) e.preventDefault();
 
     const fb   = document.getElementById("participation-feedback");
-    const name = document.getElementById("participant-name")?.value.trim();
-    const mail = document.getElementById("participant-email")?.value.trim();
     const msg  = document.getElementById("participant-message")?.value.trim();
 
-    if (!currentEvent) { if (fb) { fb.textContent = "Erreur initiative."; fb.style.color = "red"; } return; }
-    if (!name || !mail) { if (fb) { fb.textContent = "Nom et email obligatoires."; fb.style.color = "red"; } return; }
+    if (!currentEvent) {
+        if (fb) { fb.textContent = "Erreur initiative."; fb.style.color = "red"; }
+        return;
+    }
+
+    if (!sessionUserId) {
+        if (fb) { fb.textContent = "Connectez-vous pour participer."; fb.style.color = "red"; }
+        return;
+    }
 
     try {
-        const res = await fetch(API_URL_PART + "?action=create", {
+        const res = await fetch(API_URL_EVENTS + "?action=participate", {
             method : "POST",
             headers: { "Content-Type": "application/json" },
             body   : JSON.stringify({
                 event_id: currentEvent.id,
-                fullname: name,
-                email   : mail,
                 message : msg || ""
             })
         });
@@ -325,20 +346,22 @@ function setupCreateEventForm() {
         const date  = document.getElementById("event-date").value;
         const cap   = parseInt(document.getElementById("event-capacity").value, 10);
         const desc  = document.getElementById("event-description").value.trim();
-        const org   = document.getElementById("event-org-id").value.trim();
 
-        if (!title || !cat || !loc || !date || !cap || !desc || !org) {
+        if (!title || !cat || !loc || !date || !cap || !desc) {
             if (fb) { fb.textContent = "Tous les champs sont obligatoires."; fb.style.color = "red"; } return;
         }
-        if (!currentOrgId && currentRole === "organisation") currentOrgId = org; 
+        if (!sessionUserId) {
+            if (fb) { fb.textContent = "Connectez-vous pour créer une initiative."; fb.style.color = "red"; }
+            return;
+        }
+        if (!currentOrgId && (currentRole === "organisation" || currentRole === "expert")) currentOrgId = sessionUserId; 
 
         try {
             const res = await fetch(API_URL_EVENTS + "?action=create", {
                 method : "POST",
                 headers: { "Content-Type": "application/json" },
                 body   : JSON.stringify({
-                    title, category: cat, location: loc, date, capacity: cap, description: desc,
-                    created_by: "Organisation " + org, org_id: org
+                    title, category: cat, location: loc, date, capacity: cap, description: desc
                 })
             });
             const r = await res.json();
@@ -361,35 +384,18 @@ function setupCreateEventForm() {
 
 // ===================== RÔLES & FILTRES & ADMIN =====================
 function setupRoleSwitcher() {
-    const select    = document.getElementById("role-select");
     const createBtn = document.getElementById("btn-open-create");
     const adminSec  = document.getElementById("admin-section");
 
-    if (!select) return;
-
     function applyRole(role) {
         currentRole = role;
-        if (createBtn) createBtn.style.display = (role === "organisation" || role === "admin") ? "inline-flex" : "none";
+        if (createBtn) createBtn.style.display = (role === "organisation" || role === "expert" || role === "admin") ? "inline-flex" : "none";
         if (adminSec) adminSec.classList.toggle("hidden", role !== "admin");
         renderEventsList();
         renderAdminList();
     }
 
-    select.addEventListener("change", () => {
-        const role = select.value;
-        if (role === "organisation") {
-            let id = prompt("ID Organisation (simulation) :");
-            if (!id || id.trim() === "") {
-                alert("ID requis. Retour au rôle Client.");
-                select.value = "client";
-                applyRole("client");
-                return;
-            }
-            currentOrgId = id.trim();
-        } else { currentOrgId = null; }
-        applyRole(role);
-    });
-    applyRole(select.value);
+    applyRole(currentRole);
 }
 
 function setupFilters() {
@@ -409,6 +415,7 @@ function setupNavigationButtons() {
 function renderAdminList() {
     const container = document.getElementById("admin-events-list");
     if (!container) return;
+    if (currentRole !== "admin") { container.innerHTML = ""; return; }
     container.innerHTML = "";
     const pending = events.filter(e => e.status === "en_attente");
     if (!pending.length) { container.innerHTML = "<p>Aucune initiative en attente.</p>"; return; }

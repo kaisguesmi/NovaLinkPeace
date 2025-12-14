@@ -1,6 +1,10 @@
 <?php
 // api_events.php
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 header("Content-Type: application/json; charset=utf-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -55,6 +59,14 @@ switch ($action) {
     case 'recommend':   // ⭐⭐ NOUVEAU : IA qui recommande des initiatives
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             EventController::recommend();
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Méthode non autorisée']);
+        }
+        break;
+
+    case 'participate':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            EventController::participate();
         } else {
             echo json_encode(['success' => false, 'error' => 'Méthode non autorisée']);
         }

@@ -27,7 +27,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <ul>
                 <li><a href="index.php" class="nav-link active">Home</a></li>
                 <li><a href="#" class="nav-link">Stories</a></li>
-                <li><a href="#" class="nav-link">Initiatives</a></li>
+                <li><a href="../../../views/initiatives.php" class="nav-link">Initiatives</a></li>
                 
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <!-- UTILISATEUR CONNECTÉ -->
@@ -39,8 +39,29 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <i class="fa-solid fa-gauge"></i> Administration
                             </a>
                         </li>
+                    <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'organisation'): ?>
+                        <!-- CAS ORGANISATION : Liens Gestion des Offres + Candidatures -->
+                        <li><a href="/integration/index.php?action=list" class="nav-link" style="color: var(--bleu-pastel); font-weight: bold;">
+                            <i class="fa-solid fa-briefcase"></i> Gestion des Offres
+                        </a></li>
+                        <li><a href="/integration/index.php?action=list_applications" class="nav-link" style="color: var(--violet-admin); font-weight: bold;">
+                            <i class="fa-solid fa-users"></i> Candidatures
+                        </a></li>
+                        <li><a href="profile.php" class="nav-link">Profile</a></li>
+                    <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'expert'): ?>
+                        <!-- CAS EXPERT : Dashboard Expert + Offres -->
+                        <li><a href="/integration/NovaLinkPeace/PeaceLink_Expert_Dashboard/index.html" class="nav-link" style="color: var(--vert-expert); font-weight: bold;">
+                            <i class="fa-solid fa-star"></i> Dashboard Expert
+                        </a></li>
+                        <li><a href="/integration/index.php?action=list" class="nav-link" style="color: var(--bleu-pastel); font-weight: bold;">
+                            <i class="fa-solid fa-briefcase"></i> Offres
+                        </a></li>
+                        <li><a href="profile.php" class="nav-link">Profile</a></li>
                     <?php else: ?>
-                        <!-- CAS CLIENT / ORGA : Lien vers le Profil -->
+                        <!-- CAS CLIENT : Lien vers les offres disponibles -->
+                        <li><a href="/integration/index.php?action=list" class="nav-link" style="color: var(--bleu-pastel); font-weight: bold;">
+                            <i class="fa-solid fa-briefcase"></i> Offres
+                        </a></li>
                         <li><a href="profile.php" class="nav-link">Profile</a></li>
                     <?php endif; ?>
 

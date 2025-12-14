@@ -8,7 +8,10 @@ class EventModel
     {
         global $pdo;
 
-        $sql = "SELECT * FROM events ORDER BY date ASC";
+        $sql = "SELECT e.*, o.nom_organisation AS organisation_nom
+            FROM events e
+            LEFT JOIN organisation o ON o.id_utilisateur = e.created_by
+            ORDER BY e.date ASC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -18,11 +21,20 @@ class EventModel
     {
         global $pdo;
 
-        $sql = "SELECT * FROM events WHERE id = :id LIMIT 1";
+        $sql = "SELECT e.*, o.nom_organisation AS organisation_nom
+            FROM events e
+            LEFT JOIN organisation o ON o.id_utilisateur = e.created_by
+            WHERE e.id = :id LIMIT 1";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':id' => $id]);
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Alias pour compatibilité
+    public static function getById($id)
+    {
+        return self::getEventById($id);
     }
 
     public static function createEvent($data)
