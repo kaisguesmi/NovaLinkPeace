@@ -78,10 +78,15 @@ class OfferController {
     public function editOffer() {
         $id = $_GET['id'] ?? die('ID manquant.');
         
+        // Vérifier que l'utilisateur est une organisation
+        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
+            die("Accès interdit : Vous devez être une organisation.");
+        }
+        
         if ($this->offerModel->getById($id)) {
-            // Vérifier que l'organisation modifie bien sa propre offre
-            if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
-                die("Accès interdit");
+            // ✅ VÉRIFICATION : L'offre appartient-elle à cette organisation ?
+            if ((int)$this->offerModel->org_id !== (int)$_SESSION['user_id']) {
+                die("<div style='text-align:center;margin-top:50px;'><h1 style='color:#E74C3C'>Accès Refusé</h1><p>Vous ne pouvez modifier que VOS propres offres.</p><a href='index.php?action=list'>Retour</a></div>");
             }
             
             $offer = [
@@ -101,7 +106,16 @@ class OfferController {
                 die("Accès interdit");
             }
             
-            $this->offerModel->id = $_GET['id'];
+            $id = $_GET['id'];
+            
+            // ✅ VÉRIFICATION : Charger l'offre et vérifier la propriété
+            if ($this->offerModel->getById($id)) {
+                if ((int)$this->offerModel->org_id !== (int)$_SESSION['user_id']) {
+                    die("<div style='text-align:center;margin-top:50px;'><h1 style='color:#E74C3C'>Accès Refusé</h1><p>Vous ne pouvez modifier que VOS propres offres.</p><a href='index.php?action=list'>Retour</a></div>");
+                }
+            }
+            
+            $this->offerModel->id = $id;
             $this->offerModel->title = trim($_POST['title']);
             $this->offerModel->description = trim($_POST['description']);
             $this->offerModel->max_candidates = intval($_POST['max_candidates']);
@@ -119,7 +133,16 @@ class OfferController {
             die("Accès interdit");
         }
         
-        $this->offerModel->id = $_GET['id'];
+        $id = $_GET['id'];
+        
+        // ✅ VÉRIFICATION : Charger l'offre et vérifier la propriété
+        if ($this->offerModel->getById($id)) {
+            if ((int)$this->offerModel->org_id !== (int)$_SESSION['user_id']) {
+                die("<div style='text-align:center;margin-top:50px;'><h1 style='color:#E74C3C'>Accès Refusé</h1><p>Vous ne pouvez supprimer que VOS propres offres.</p><a href='index.php?action=list'>Retour</a></div>");
+            }
+        }
+        
+        $this->offerModel->id = $id;
         if ($this->offerModel->delete()) {
             header("Location: index.php?action=list&status=deleted");
             exit();
@@ -244,15 +267,23 @@ class OfferController {
         }
         
         $offer_id = isset($_GET['offer_id']) ? $_GET['offer_id'] : null;
-        $applications = $this->applicationModel->getAllWithOfferDetails($offer_id)->fetchAll(PDO::FETCH_ASSOC);
         
         // Si filtré par offre, vérifier que l'offre appartient à l'organisation
         if ($offer_id) {
             $this->offerModel->getById($offer_id);
+            
+            // ✅ VÉRIFICATION : L'offre appartient-elle à cette organisation ?
+            if ((int)$this->offerModel->org_id !== (int)$_SESSION['user_id']) {
+                die("<div style='text-align:center;margin-top:50px;'><h1 style='color:#E74C3C'>Accès Refusé</h1><p>Cette offre n'appartient pas à votre organisation.</p><a href='index.php?action=list_applications'>Retour</a></div>");
+            }
+            
             $filter_title = $this->offerModel->title;
         } else {
             $filter_title = null;
         }
+        
+        // ✅ SÉCURITÉ : Récupérer uniquement les candidatures des offres de CETTE organisation
+        $applications = $this->applicationModel->getAllWithOfferDetails($offer_id, $_SESSION['user_id'])->fetchAll(PDO::FETCH_ASSOC);
         
         require 'view/admin_applications_list.php';
     }

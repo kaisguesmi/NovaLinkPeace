@@ -63,7 +63,7 @@ class Application {
         return $stmt->execute();
     }
 
-    public function getAllWithOfferDetails($offer_id = null) {
+    public function getAllWithOfferDetails($offer_id = null, $org_id = null) {
         // On récupère aussi le score, sentiment et les infos du client
         $query = "SELECT app.*, off.title as offer_title, off.org_id,
                   cl.nom_complet as client_nom, u.email as client_email_user
@@ -72,8 +72,18 @@ class Application {
                   LEFT JOIN Client as cl ON app.candidate_id = cl.id_utilisateur
                   LEFT JOIN Utilisateur as u ON app.candidate_id = u.id_utilisateur";
         
+        $conditions = [];
         if ($offer_id) {
-            $query .= " WHERE app.offer_id = :offer_id";
+            $conditions[] = "app.offer_id = :offer_id";
+        }
+        
+        // ✅ SÉCURITÉ : Filtrer par organisation pour voir uniquement SES candidatures
+        if ($org_id) {
+            $conditions[] = "off.org_id = :org_id";
+        }
+        
+        if (!empty($conditions)) {
+            $query .= " WHERE " . implode(" AND ", $conditions);
         }
         
         $query .= " ORDER BY app.score DESC, app.submitted_at DESC"; // On trie par Score (les meilleurs en premier !)
@@ -81,6 +91,9 @@ class Application {
         $stmt = $this->conn->prepare($query);
         if ($offer_id) {
             $stmt->bindParam(':offer_id', $offer_id);
+        }
+        if ($org_id) {
+            $stmt->bindParam(':org_id', $org_id);
         }
         $stmt->execute();
         return $stmt;
