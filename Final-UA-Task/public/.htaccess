@@ -1,0 +1,27 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # If the requested file or directory doesn't exist
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Route everything through index.php
+    RewriteRule ^(.*)$ index.php [QSA,L]
+    
+    # Prevent directory listing
+    Options -Indexes
+    
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+
+# Set the default charset
+AddDefaultCharset UTF-8
+
+# Protect against XSS attacks
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-XSS-Protection "1; mode=block"
+    Header always append X-Frame-Options SAMEORIGIN
+</IfModule>
