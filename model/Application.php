@@ -23,6 +23,17 @@ class Application {
         $this->conn = Database::getConnection();
     }
 
+    public function hasAlreadyApplied($offer_id, $candidate_id) {
+        $query = "SELECT COUNT(*) as count FROM " . $this->table_name . " 
+                  WHERE offer_id = :offer_id AND candidate_id = :candidate_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':offer_id', $offer_id);
+        $stmt->bindParam(':candidate_id', $candidate_id);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row['count'] > 0;
+    }
+
     public function create() {
         // Ajout de candidate_id, score et sentiment dans la requête
         $query = "INSERT INTO " . $this->table_name . " 

@@ -108,7 +108,7 @@
                             
                             <!-- 6. ACTIONS -->
                             <td class="actions-cell" style="text-align: right;">
-                                <?php if ($app['status'] === 'en attente'): ?>
+                                <?php if ($app['status'] === 'en_attente'): ?>
                                     <!-- Boutons visibles uniquement si en attente -->
                                     <a href="index.php?action=update_status&id=<?= $app['id'] ?>&status=acceptée" 
                                        class="action-btn success" title="Accepter et envoyer Email"

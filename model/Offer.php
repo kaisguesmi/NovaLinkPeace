@@ -51,6 +51,7 @@ class Offer {
 
         if($row) {
             $this->id = $row['id'];
+            $this->org_id = $row['org_id']; // ✅ AJOUT DE L'ORG_ID
             $this->title = $row['title'];
             $this->description = $row['description'];
             $this->status = $row['status'];

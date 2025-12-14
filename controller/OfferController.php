@@ -153,56 +153,59 @@ class OfferController {
             
             $offer_id = $_POST['offer_id'];
             
+            // 0. Vérification si déjà postulé
+            if ($this->applicationModel->hasAlreadyApplied($offer_id, $_SESSION['user_id'])) {
+                die("<div style='text-align:center;margin-top:50px;'><h1 style='color:#E74C3C'>Candidature déjà envoyée</h1><p>Vous avez déjà postulé à cette offre.</p><a href='index.php?action=list'>Retour aux offres</a></div>");
+            }
+            
             // 0. Vérification Quota
             if ($this->offerModel->isFull($offer_id)) die("Erreur : Offre complète.");
             
             $motivation = trim($_POST['motivation']);
 
-            // 🛡️ 1. FILTRE LONGUEUR (Anti-Lazy)
-            // Si moins de 100 caractères, on considère que c'est du spam ou un prompt IA trop court
-            if (strlen($motivation) < 100) {
+            // 🛡️ 1. FILTRE LONGUEUR (Anti-Lazy) - RÉDUIT DE 100 À 30 CARACTÈRES
+            if (strlen($motivation) < 30) {
                 $this->saveApplication($offer_id, $motivation, 'refusée', 0, 'Spam (Trop court)');
                 header("Location: index.php?status=applied_refused");
                 exit();
             }
             
-            // 🛡️ 2. DÉTECTION IA API (Hugging Face)
-            // Appel de la méthode stricte
-            $is_fake = $this->detectAiContent($motivation);
+            // 🛡️ 2. DÉTECTION IA API (Hugging Face) - DÉSACTIVÉ TEMPORAIREMENT
+            // $is_fake = $this->detectAiContent($motivation);
+            $is_fake = false; // Désactivé pour permettre les candidatures
             
             if ($is_fake) {
-                // Refus immédiat avec motif spécial
                 $this->saveApplication($offer_id, $motivation, 'refusée', 0, 'Artificiel');
                 header("Location: index.php?status=detected_ai");
                 exit();
             }
 
-            // 🛡️ 3. FILTRAGE ATS (Mots-clés)
+            // 🛡️ 3. FILTRAGE ATS (Mots-clés) - TOUTES LES CANDIDATURES ACCEPTÉES PAR DÉFAUT
             $this->offerModel->getById($offer_id);
             $required_keywords = $this->offerModel->keywords;
-            $status = 'en attente';
+            $status = 'en_attente'; // Changé de 'en attente' à 'en_attente' pour cohérence
             
+            // Désactivé : on n'évalue plus les mots-clés automatiquement
+            // Les organisations pourront juger manuellement
+            /*
             if (!empty($required_keywords)) {
                 $keywords_array = array_map('trim', explode(',', $required_keywords));
                 
-                // Vérification de chaque mot clé
                 foreach ($keywords_array as $word) {
                     if (!empty($word) && stripos($motivation, $word) === false) {
                         $status = 'refusée'; break;
                     }
                 }
 
-                // 🛡️ 4. ANTI-BOURRAGE (Keyword Stuffing)
-                // Si le texte contient trop de mots clés par rapport à sa longueur totale
                 $total_len = strlen($motivation);
                 $kw_len = 0;
                 foreach ($keywords_array as $word) $kw_len += substr_count(strtolower($motivation), strtolower($word)) * strlen($word);
                 
-                // Si > 30% du texte sont juste des mots clés -> Fake
-                if (($kw_len / $total_len) > 0.3) {
+                if (($kw_len / $total_len) > 0.10) {
                     $status = 'refusée';
                 }
             }
+            */
 
             // 4. IA Interne (Score & Sentiment)
             $score = $this->calculateAiScore($motivation, $required_keywords);
@@ -267,14 +270,26 @@ class OfferController {
             $appInfo = $this->applicationModel->getById($id);
             
             if ($appInfo) {
-                // Récupérer le nom de l'organisation
+                // ✅ VÉRIFICATION : L'offre appartient-elle à cette organisation ?
                 $this->offerModel->getById($appInfo['offer_id']);
                 
-                // Utiliser le nom de l'organisation depuis la session ou la base
-                $orgName = $_SESSION['organisation_name'] ?? 'Notre Organisation';
+                // Comparaison stricte avec conversion en entier
+                if ((int)$this->offerModel->org_id !== (int)$_SESSION['user_id']) {
+                    die("Erreur : Vous ne pouvez gérer que VOS candidatures. (Offre appartient à org_id=" . $this->offerModel->org_id . ", votre user_id=" . $_SESSION['user_id'] . ")");
+                }
                 
-                // Envoi Email selon le statut
+                // Récupérer le nom de l'organisation depuis la base de données
+                $db = Database::getConnection();
+                $stmt = $db->prepare("SELECT nom_organisation FROM Organisation WHERE id_utilisateur = ?");
+                $stmt->execute([$_SESSION['user_id']]);
+                $orgData = $stmt->fetch(PDO::FETCH_ASSOC);
+                $orgName = $orgData['nom_organisation'] ?? 'Notre Organisation';
+                
+                // 📧 ENVOI EMAIL AUTOMATIQUE PROFESSIONNEL
                 if ($status === 'acceptée') {
+                    // ⭐ TRANSFORMATION CLIENT → EXPERT
+                    $this->transformClientToExpert($appInfo['candidate_id'], $appInfo['candidate_name'], $appInfo['offer_title']);
+                    
                     EmailService::sendAcceptanceEmail(
                         $appInfo['candidate_email'], 
                         $appInfo['candidate_name'], 
@@ -294,6 +309,34 @@ class OfferController {
             $this->applicationModel->updateStatus($id, $status);
             header("Location: index.php?action=list_applications&status=app_updated");
             exit();
+        }
+    }
+
+    // ⭐ TRANSFORMATION CLIENT → EXPERT (après acceptation)
+    private function transformClientToExpert($candidate_id, $candidate_name, $offer_title) {
+        $db = Database::getConnection();
+        
+        // Vérifier si le client n'est pas déjà expert
+        $checkStmt = $db->prepare("SELECT id_utilisateur FROM Expert WHERE id_utilisateur = ?");
+        $checkStmt->execute([$candidate_id]);
+        
+        if ($checkStmt->rowCount() == 0) {
+            // Créer l'entrée Expert avec la spécialité basée sur l'offre
+            $insertStmt = $db->prepare("INSERT INTO Expert (id_utilisateur, nom_complet, specialite, bio, date_devenu_expert) 
+                                        VALUES (?, ?, ?, ?, NOW())");
+            
+            // Récupérer la bio du client
+            $clientStmt = $db->prepare("SELECT bio FROM Client WHERE id_utilisateur = ?");
+            $clientStmt->execute([$candidate_id]);
+            $clientData = $clientStmt->fetch(PDO::FETCH_ASSOC);
+            $bio = $clientData['bio'] ?? 'Expert PeaceLink';
+            
+            $insertStmt->execute([
+                $candidate_id, 
+                $candidate_name, 
+                $offer_title, // Spécialité = titre de l'offre acceptée
+                $bio
+            ]);
         }
     }
 
