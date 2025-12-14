@@ -66,6 +66,14 @@ switch ($action) {
     case 'admin_unban_user':
         handleAdminUnbanUser($utilisateur);
         break;
+    
+    case 'ajax_get_photo':
+        handleAjaxGetPhoto($utilisateur, $db);
+        break;
+    
+    case 'login_with_face':
+        handleLoginWithFace($utilisateur, $db);
+        break;
 
     default:
         header("Location: ../View/FrontOffice/index.php");
@@ -483,6 +491,8 @@ function handleAdminUpdateUser($utilisateur) {
 }
 // 1. Traite la demande (Génère le token)
 function handleForgotPasswordRequest($utilisateur) {
+    require_once __DIR__ . '/../../../model/EmailService.php';
+    
     $email = $_POST['email'] ?? '';
 
     // Vérifie si l'email existe
@@ -493,55 +503,29 @@ function handleForgotPasswordRequest($utilisateur) {
         $token = bin2hex(random_bytes(32));
         $utilisateur->setResetToken($email, $token);
 
-        // 2. Préparer le lien (CORRIGÉ ICI)
-        $server = $_SERVER['HTTP_HOST']; 
+        // 2. Préparer le lien
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+        $server = $_SERVER['HTTP_HOST'];
+        $folder = "/integration/NovaLinkPeace/test";
         
-        // C'est ici que j'ai mis le bon nom de ton dossier : "test"
-        $folder = "/test"; 
-        
-        $resetLink = "http://" . $server . $folder . "/View/FrontOffice/reset_password.php?token=" . $token;
+        $resetLink = $protocol . "://" . $server . $folder . "/View/FrontOffice/reset_password.php?token=" . $token;
 
-        // 3. Préparer l'email
-        $to = $email;
-        $subject = "Réinitialisation de votre mot de passe - PeaceLink";
-        
-        $message = "
-        <html>
-        <head>
-          <title>Mot de passe oublié</title>
-        </head>
-        <body>
-          <h2>Bonjour,</h2>
-          <p>Vous avez demandé à réinitialiser votre mot de passe sur PeaceLink.</p>
-          <p>Cliquez sur le lien ci-dessous pour changer votre mot de passe :</p>
-          <p>
-            <a href='$resetLink' style='background-color:#5dade2; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;'>Réinitialiser mon mot de passe</a>
-          </p>
-          <p>Ou copiez ce lien : $resetLink</p>
-          <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
-        </body>
-        </html>
-        ";
+        // 3. Récupérer le nom de l'utilisateur
+        $userName = $user['username'] ?? 'Utilisateur';
 
-        // En-têtes obligatoires
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-        
-        // --- IMPORTANT : METS TON ADRESSE GMAIL ICI (Celle du sendmail.ini) ---
-        $headers .= "From: PeaceLink <ton_adresse_gmail_ici@gmail.com>" . "\r\n";
-
-        // 4. Envoyer le mail
-        if (mail($to, $subject, $message, $headers)) {
-            $_SESSION['info_mail'] = "Un email de réinitialisation a été envoyé à $email. Vérifiez vos spams !";
+        // 4. Envoyer l'email professionnel avec EmailService
+        if (EmailService::sendPasswordResetEmail($email, $userName, $resetLink)) {
+            $_SESSION['info_mail'] = "✅ Un email de réinitialisation a été envoyé à <strong>$email</strong>. Vérifiez votre boîte de réception et vos spams !";
         } else {
-            $_SESSION['info_mail'] = "Erreur technique : L'email n'a pas pu être envoyé. Vérifiez la config XAMPP.";
+            $_SESSION['info_mail'] = "❌ Erreur technique : L'email n'a pas pu être envoyé. Vérifiez la configuration XAMPP.";
         }
         
         header("Location: ../View/FrontOffice/forgot_password.php");
         exit();
 
     } else {
-        $_SESSION['info_mail'] = "Si cet email existe, un lien a été envoyé.";
+        // Pour des raisons de sécurité, on affiche le même message
+        $_SESSION['info_mail'] = "✅ Si cet email existe dans notre système, un lien de réinitialisation a été envoyé.";
         header("Location: ../View/FrontOffice/forgot_password.php");
         exit();
     }
@@ -623,5 +607,179 @@ function handleAdminUnbanUser($utilisateur) {
 
     header("Location: ../View/BackOffice/backoffice.php");
     exit();
+}
+
+// =========================================================
+// 🎭 GESTION FACE ID
+// =========================================================
+
+/**
+ * Récupère la photo de profil d'un utilisateur pour Face ID
+ * Retourne JSON avec le chemin de la photo
+ */
+function handleAjaxGetPhoto($utilisateur, $db) {
+    // Vider tous les buffers existants
+    while (ob_get_level()) ob_end_clean();
+    
+    // Désactiver l'affichage des erreurs
+    ini_set('display_errors', 0);
+    error_reporting(E_ALL);
+    
+    // Log pour débogage
+    error_log("=== AJAX GET PHOTO ===");
+    error_log("POST data: " . print_r($_POST, true));
+    
+    try {
+        header('Content-Type: application/json');
+        
+        $email = $_POST['email'] ?? '';
+        
+        if (empty($email)) {
+            echo json_encode(['success' => false, 'message' => 'Email requis']);
+            exit();
+        }
+        
+        // Récupérer l'utilisateur par email
+        $user = $utilisateur->findByEmail($email);
+        
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable']);
+            exit();
+        }
+        
+        // Vérifier le rôle (seuls les clients peuvent utiliser Face ID)
+        $role = $utilisateur->getUserRole($user['id_utilisateur']);
+        
+        error_log("Role trouvé: " . $role);
+        
+        if ($role !== 'client') {
+            echo json_encode(['success' => false, 'message' => 'Face ID disponible uniquement pour les clients']);
+            exit();
+        }
+        
+        // Récupérer la photo de profil et le nom depuis Utilisateur et Client
+        $stmt = $db->prepare("
+            SELECT u.photo_profil, c.nom_complet 
+            FROM Utilisateur u
+            LEFT JOIN Client c ON u.id_utilisateur = c.id_utilisateur
+            WHERE u.id_utilisateur = ?
+        ");
+        $stmt->execute([$user['id_utilisateur']]);
+        $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$userData || empty($userData['photo_profil'])) {
+            echo json_encode(['success' => false, 'message' => 'Aucune photo de profil trouvée. Veuillez ajouter une photo dans votre profil.']);
+            exit();
+        }
+        
+        // Vérifier que le fichier existe
+        $photoPath = __DIR__ . '/../View/uploads/' . $userData['photo_profil'];
+        error_log("Chemin photo: " . $photoPath);
+        error_log("Fichier existe: " . (file_exists($photoPath) ? 'OUI' : 'NON'));
+        
+        if (!file_exists($photoPath)) {
+            echo json_encode(['success' => false, 'message' => 'Fichier photo introuvable']);
+            exit();
+        }
+        
+        echo json_encode([
+            'success' => true, 
+            'photo' => $userData['photo_profil'],
+            'nom_complet' => $userData['nom_complet'] ?? $user['email']
+        ]);
+        exit();
+        
+    } catch (Exception $e) {
+        error_log("Exception dans handleAjaxGetPhoto: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Erreur serveur: ' . $e->getMessage()]);
+        exit();
+    }
+}
+
+/**
+ * Connexion avec Face ID après reconnaissance faciale réussie
+ */
+function handleLoginWithFace($utilisateur, $db) {
+    // Vider tous les buffers existants et en démarrer un nouveau
+    while (ob_get_level()) ob_end_clean();
+    
+    // Désactiver l'affichage des erreurs (elles iront dans error_log)
+    ini_set('display_errors', 0);
+    error_reporting(E_ALL);
+    
+    error_log("=== LOGIN WITH FACE ===");
+    error_log("POST data: " . print_r($_POST, true));
+    
+    try {
+        header('Content-Type: application/json');
+        
+        $email = $_POST['email'] ?? '';
+        
+        if (empty($email)) {
+            error_log("Erreur: Email vide");
+            echo json_encode(['success' => false, 'message' => 'Email requis']);
+            exit();
+        }
+        
+        // Récupérer l'utilisateur
+        $user = $utilisateur->findByEmail($email);
+        
+        if (!$user) {
+            error_log("Erreur: Utilisateur introuvable pour email: " . $email);
+            echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable']);
+            exit();
+        }
+        
+        error_log("Utilisateur trouvé: ID " . $user['id_utilisateur']);
+        
+        // Vérifier le rôle
+        $role = $utilisateur->getUserRole($user['id_utilisateur']);
+        error_log("Rôle: " . $role);
+        
+        if ($role !== 'client') {
+            error_log("Erreur: Rôle invalide (pas client)");
+            echo json_encode(['success' => false, 'message' => 'Face ID disponible uniquement pour les clients']);
+            exit();
+        }
+        
+        // Vérifier si l'utilisateur est banni (TODO: implémenter isBanned() dans Utilisateur.php)
+        // if ($utilisateur->isBanned($user['id_utilisateur'])) {
+        //     error_log("Erreur: Utilisateur banni");
+        //     echo json_encode(['success' => false, 'message' => 'Votre compte est banni']);
+        //     exit();
+        // }
+        
+        // Connexion réussie - Créer la session
+        $_SESSION['user_id'] = $user['id_utilisateur'];
+        $_SESSION['email'] = $user['email'];
+        $_SESSION['role'] = $role;
+        
+        error_log("Session créée - user_id: " . $_SESSION['user_id']);
+        error_log("Session role: " . $_SESSION['role']);
+        
+        // Déterminer la redirection selon le rôle
+        $redirect = "index.php";
+        if ($role === 'client') {
+            $redirect = "index.php";
+        } elseif ($role === 'organisation') {
+            $redirect = "index.php";
+        } elseif ($role === 'admin') {
+            $redirect = "../BackOffice/backoffice.php";
+        }
+        
+        error_log("Redirection vers: " . $redirect);
+        
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Connexion réussie avec Face ID !',
+            'redirect' => $redirect
+        ]);
+        exit();
+        
+    } catch (Exception $e) {
+        error_log("Exception dans handleLoginWithFace: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Erreur serveur: ' . $e->getMessage()]);
+        exit();
+    }
 }
 ?>

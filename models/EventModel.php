@@ -41,13 +41,17 @@ class EventModel
     {
         global $pdo;
 
+        // Auto-valider les initiatives créées par les organisations/experts
+        // (seuls les admins peuvent créer des initiatives en attente de validation)
+        $initialStatus = 'validé';
+
         $sql = "INSERT INTO events (
                     title, category, location, date, capacity, description,
                     status, created_by, org_id, created_at
                 )
                 VALUES (
                     :title, :category, :location, :date, :capacity, :description,
-                    'en_attente', :created_by, :org_id, NOW()
+                    :status, :created_by, :org_id, NOW()
                 )";
 
         $stmt = $pdo->prepare($sql);
@@ -59,6 +63,7 @@ class EventModel
             ':date'        => $data['date'],
             ':capacity'    => $data['capacity'],
             ':description' => $data['description'],
+            ':status'      => $initialStatus,
             ':created_by'  => $data['created_by'],
             ':org_id'      => $data['org_id']
         ]);

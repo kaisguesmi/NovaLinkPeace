@@ -33,7 +33,7 @@ $sessionUsername = $_SESSION['username'] ?? null;
         <div class="navbar-container">
             <div class="navbar-brand">
                 <a href="/integration/NovaLinkPeace/test/View/FrontOffice/index.php">
-                    <img src="../mon-logo.png" alt="Logo PeaceLink" class="logo-img">
+                    <img src="/integration/NovaLinkPeace/mon-logo.png" alt="Logo PeaceLink" class="logo-img">
                     <span class="site-name">PeaceLink</span>
                 </a>
             </div>

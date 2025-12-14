@@ -7,7 +7,7 @@
     <title>Mot de passe oublié - PeaceLink</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- THEME PEACELINK --- */
+        /* --- THEME PEACELINK AMÉLIORÉ --- */
         :root {
             --bleu-pastel: #5dade2;
             --vert-doux: #7bd389;
@@ -16,81 +16,228 @@
             --rouge-erreur: #e74c3c;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body { 
-            margin: 0; padding: 0;
-            background: linear-gradient(135deg, var(--bleu-pastel), var(--vert-doux));
-            display: flex; justify-content: center; align-items: center; height: 100vh; 
-            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, var(--bleu-pastel) 0%, var(--vert-doux) 100%);
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
         }
 
         .card { 
-            background: var(--blanc-pur); padding: 40px; 
-            border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
-            width: 100%; max-width: 400px; text-align: center;
+            background: var(--blanc-pur); 
+            padding: 45px 40px; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2); 
+            width: 100%; 
+            max-width: 450px; 
+            text-align: center;
+            animation: slideIn 0.5s ease;
         }
 
-        h2 { color: var(--gris-fonce); margin-bottom: 10px; }
-        p.desc { color: #7f8c8d; font-size: 0.9em; margin-bottom: 25px; }
+        @keyframes slideIn {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
 
-        .input-group { position: relative; margin-bottom: 20px; text-align: left; }
-        .input-group i { position: absolute; left: 15px; top: 14px; color: #aaa; }
+        .lock-icon {
+            font-size: 70px;
+            background: linear-gradient(135deg, var(--bleu-pastel), var(--vert-doux));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        h2 { 
+            color: var(--gris-fonce); 
+            margin-bottom: 10px; 
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        p.desc { 
+            color: #7f8c8d; 
+            font-size: 14px; 
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .input-group { 
+            position: relative; 
+            margin-bottom: 20px; 
+            text-align: left; 
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-group i { 
+            position: absolute; 
+            left: 15px; 
+            top: 50%; 
+            transform: translateY(-50%);
+            color: #aaa;
+            transition: color 0.3s ease;
+        }
+        
         .input-group input { 
-            width: 100%; padding: 12px 15px 12px 40px; 
-            border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;
+            width: 100%; 
+            padding: 14px 15px 14px 45px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 10px; 
+            font-size: 15px;
+            transition: all 0.3s ease;
         }
-        .input-group input:focus { border-color: var(--bleu-pastel); outline: none; }
+        
+        .input-group input:focus { 
+            border-color: var(--bleu-pastel); 
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(93, 173, 226, 0.1);
+        }
+
+        .input-group input:focus + i {
+            color: var(--bleu-pastel);
+        }
 
         /* Style pour le message d'erreur JS */
         .error-text {
             color: var(--rouge-erreur);
             font-size: 12px;
-            margin-top: 5px;
+            margin-top: 6px;
             padding-left: 5px;
-            display: none; /* Caché par défaut */
+            display: none;
+            font-weight: 500;
         }
-        .input-error { border-color: var(--rouge-erreur) !important; }
+        
+        .input-error { 
+            border-color: var(--rouge-erreur) !important;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
 
         button { 
-            width: 100%; padding: 12px; 
-            background: linear-gradient(to right, var(--bleu-pastel), var(--vert-doux)); 
-            color: white; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; 
+            width: 100%; 
+            padding: 15px; 
+            background: linear-gradient(135deg, var(--bleu-pastel), var(--vert-doux)); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            font-size: 16px;
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(93, 173, 226, 0.3);
         }
-        button:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(93, 173, 226, 0.4); }
+        
+        button:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(93, 173, 226, 0.4); 
+        }
 
-        .message-box { background: #e8f8f5; color: #27ae60; padding: 15px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; border-left: 4px solid #2ecc71; text-align: left;}
-        .error-box { background: #fdedec; color: #e74c3c; padding: 15px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; border-left: 4px solid #e74c3c;}
-        a.back-link { display: inline-block; margin-top: 20px; color: #7f8c8d; text-decoration: none; font-size: 14px; }
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message-box { 
+            background: #d4edda; 
+            color: #155724; 
+            padding: 15px; 
+            border-radius: 10px; 
+            font-size: 14px; 
+            margin-bottom: 25px; 
+            border-left: 4px solid #28a745; 
+            text-align: left;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .error-box { 
+            background: #f8d7da; 
+            color: #721c24; 
+            padding: 15px; 
+            border-radius: 10px; 
+            font-size: 14px; 
+            margin-bottom: 25px; 
+            border-left: 4px solid #e74c3c;
+            text-align: left;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        a.back-link { 
+            display: inline-block; 
+            margin-top: 25px; 
+            color: #7f8c8d; 
+            text-decoration: none; 
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        a.back-link:hover {
+            color: var(--bleu-pastel);
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .card { padding: 35px 25px; }
+            h2 { font-size: 24px; }
+            .lock-icon { font-size: 60px; }
+        }
     </style>
 </head>
 <body>
     <div class="card">
-        <div style="font-size: 40px; color: var(--bleu-pastel); margin-bottom: 10px;">
+        <div class="lock-icon">
             <i class="fa-solid fa-lock"></i>
         </div>
         <h2>Mot de passe oublié ?</h2>
-        <p class="desc">Entrez votre email et nous vous enverrons un lien.</p>
+        <p class="desc">Pas de problème ! Entrez votre email et nous vous enverrons un lien sécurisé pour réinitialiser votre mot de passe.</p>
 
         <?php if (isset($_SESSION['info_mail'])): ?>
-            <div class="<?php echo strpos($_SESSION['info_mail'], 'Erreur') !== false ? 'error-box' : 'message-box'; ?>">
+            <div class="<?php echo strpos($_SESSION['info_mail'], '❌') !== false ? 'error-box' : 'message-box'; ?>">
                 <?php echo $_SESSION['info_mail']; unset($_SESSION['info_mail']); ?>
             </div>
         <?php endif; ?>
 
-        <!-- Ajout de id="forgot-form" et novalidate -->
         <form id="forgot-form" action="../../Controller/UtilisateurController.php" method="POST" novalidate>
             <input type="hidden" name="action" value="forgot_password_request">
             
             <div class="input-group">
-                <i class="fa-solid fa-envelope"></i>
-                <input type="email" id="email" name="email" placeholder="Entrez votre email">
-                <!-- Zone d'erreur -->
+                <div class="input-wrapper">
+                    <input type="email" id="email" name="email" placeholder="Entrez votre adresse email">
+                    <i class="fa-solid fa-envelope"></i>
+                </div>
                 <div id="err-email" class="error-text"></div>
             </div>
             
-            <button type="submit">Envoyer le lien</button>
+            <button type="submit">
+                <i class="fa-solid fa-paper-plane"></i> Envoyer le lien de réinitialisation
+            </button>
         </form>
         
-        <a href="login.php" class="back-link"><i class="fa-solid fa-arrow-left"></i> Retour à la connexion</a>
+        <a href="login.php" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> Retour à la connexion
+        </a>
     </div>
 
     <!-- SCRIPT DE VALIDATION -->
