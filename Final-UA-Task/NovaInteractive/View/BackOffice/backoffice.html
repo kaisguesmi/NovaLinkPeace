@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Back Office - PeaceLink</title>
+    <!-- On utilise le MÊME fichier CSS que pour le front-office -->
+    <link rel="stylesheet" href="backofficeStyle.css">
+    <!-- Ajout d'une bibliothèque d'icônes (Font Awesome) pour illustrer -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- =========== 1. Barre Latérale (Sidebar) =========== -->
+    <div class="sidebar">
+        <!-- En-tête de la sidebar -->
+        <div class="sidebar-header">
+            <a href="#" class="logo">
+                <img src="mon-logo.png" alt="Logo PeaceLink">
+                <span>PeaceLink</span>
+            </a>
+        </div>
+
+        <!-- Navigation principale -->
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active">
+                <i class="fa-solid fa-house"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fa-solid fa-book-open"></i>
+                <span>Stories</span>
+                <span class="badge orange">3</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fa-solid fa-hand-holding-heart"></i>
+                <span>Initiatives</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fa-solid fa-users"></i>
+                <span>Users</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fa-solid fa-gear"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <!-- Pied de page de la sidebar -->
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <i class="fa-solid fa-user-circle user-avatar"></i>
+                <div class="user-info">
+                    <span class="user-name">Admin User</span>
+                    <span class="user-role">Administrator</span>
+                </div>
+            </div>
+            <button class="logout-btn" aria-label="Logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- =========== 2. Contenu Principal =========== -->
+    <div class="main-content">
+        <!-- Barre supérieure (Topbar) -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+            <div class="topbar-right">
+                <button class="icon-btn">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notification-dot"></span>
+                </button>
+                <button class="icon-btn">
+                    <i class="fa-solid fa-envelope"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Contenu de la page -->
+        <main class="content-wrapper">
+            <!-- En-tête de la page -->
+            <div class="page-header">
+                <div>
+                    <h1>Dashboard</h1>
+                    <p class="page-subtitle">Welcome back, Admin!</p>
+                </div>
+                <button class="btn-primary">
+                    <i class="fa-solid fa-plus"></i> Create New
+                </button>
+            </div>
+
+            <!-- Grille de statistiques -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fa-solid fa-book-open"></i></div>
+                    <div>
+                        <p class="stat-label">Total Stories</p>
+                        <h2 class="stat-value">1,258</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fa-solid fa-hand-holding-heart"></i></div>
+                    <div>
+                        <p class="stat-label">Active Initiatives</p>
+                        <h2 class="stat-value">72</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <p class="stat-label">New Users (Month)</p>
+                        <h2 class="stat-value">314</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red"><i class="fa-solid fa-flag"></i></div>
+                    <div>
+                        <p class="stat-label">Reports to review</p>
+                        <h2 class="stat-value">8</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grille de graphiques (exemple) -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header"><h3>User Growth</h3></div>
+                    <div class="chart-body" style="display:flex; align-items:center; justify-content:center; color:#888;">(Chart would be displayed here)</div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header"><h3>Content Distribution</h3></div>
+                    <div class="chart-body" style="display:flex; align-items:center; justify-content:center; color:#888;">(Chart would be displayed here)</div>
+                </div>
+            </div>
+
+            <!-- Tableau des histoires récentes -->
+            <div class="table-card">
+                <h3>Recent Stories</h3>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Story Title</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-cell-avatar">JD</div>
+                                        <span>Jane Doe</span>
+                                    </div>
+                                </td>
+                                <td>My Experience in a Peace Project</td>
+                                <td><span class="status-badge active">Published</span></td>
+                                <td>2023-10-26</td>
+                                <td class="actions-cell">
+                                    <button class="action-btn"><i class="fa-solid fa-eye"></i></button>
+                                    <button class="action-btn"><i class="fa-solid fa-pen"></i></button>
+                                    <button class="action-btn danger"><i class="fa-solid fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            <!-- Ajoutez d'autres lignes ici -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Petit script pour la bascule du menu -->
+    <script>
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+    </script>
+
+</body>
+</html>
