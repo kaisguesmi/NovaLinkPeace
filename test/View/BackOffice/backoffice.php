@@ -80,6 +80,10 @@ if (isset($_SESSION['error_msg'])) {
                 <i class="fa-solid fa-users"></i>
                 <span>Clients</span>
             </a>
+            <a href="reclamations.php" class="nav-item">
+                <i class="fa-solid fa-flag"></i>
+                <span>Reclamations</span>
+            </a>
              <a href="#banned" class="nav-item">
                 <i class="fa-solid fa-user-slash"></i> <!-- Icône utilisateur barré -->
                 <span>Banned Users</span>

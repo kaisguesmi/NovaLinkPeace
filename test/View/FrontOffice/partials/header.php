@@ -26,7 +26,7 @@ if (session_status() === PHP_SESSION_NONE) {
         <nav class="navbar-links">
             <ul>
                 <li><a href="/integration/NovaLinkPeace/test/View/FrontOffice/index.php" class="nav-link active">Home</a></li>
-                <li><a href="#" class="nav-link">Stories</a></li>
+                <li><a href="/integration/test/View/FrontOffice/histoires.php" class="nav-link">Stories</a></li>
                 <li><a href="/integration/NovaLinkPeace/views/initiatives.php" class="nav-link">Initiatives</a></li>
                 
                 <?php if (isset($_SESSION['user_id'])): ?>
