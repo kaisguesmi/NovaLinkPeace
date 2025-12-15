@@ -42,7 +42,6 @@ $sessionUsername = $_SESSION['username'] ?? null;
                     <li><a href="/integration/NovaLinkPeace/test/View/FrontOffice/index.php" class="nav-link">Home</a></li>
                     <li><a href="#" class="nav-link">Stories</a></li>
                     <li><a href="/integration/NovaLinkPeace/views/initiatives.php" class="nav-link active">Initiatives</a></li>
-                    <li><a href="/integration/NovaLinkPeace/test/View/FrontOffice/inscription.php" class="nav-link btn-join-us">Join Us</a></li>
                 </ul>
             </nav>
         </div>
