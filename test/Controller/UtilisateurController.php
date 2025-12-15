@@ -149,10 +149,10 @@ function handleRegister($utilisateur) {
 }
 
 function handleLogin($utilisateur) {
-    $email = $_POST['email'] ?? '';
-    $password = $_POST['mot_de_passe'] ?? '';
+    $email = trim($_POST['email'] ?? '');
+    $password = trim($_POST['mot_de_passe'] ?? '');
 
-    if (empty($email) || empty($password)) {
+    if ($email === '' || $password === '') {
         $_SESSION['error_login'] = "Veuillez remplir tous les champs.";
         header("Location: ../View/FrontOffice/login.php");
         exit();
@@ -531,8 +531,14 @@ function handleForgotPasswordRequest($utilisateur) {
 // 2. Traite le changement de mot de passe
 function handleResetPasswordSubmit($utilisateur) {
     $token = $_POST['token'] ?? '';
-    $new_pass = $_POST['new_password'] ?? '';
-    $confirm_pass = $_POST['confirm_password'] ?? '';
+    $new_pass = trim($_POST['new_password'] ?? '');
+    $confirm_pass = trim($_POST['confirm_password'] ?? '');
+
+    if (strlen($new_pass) < 6) {
+        $_SESSION['error_msg'] = "Le mot de passe doit contenir au moins 6 caractères.";
+        header("Location: ../View/FrontOffice/reset_password.php?token=$token");
+        exit();
+    }
 
     if ($new_pass !== $confirm_pass) {
         $_SESSION['error_msg'] = "Les mots de passe ne correspondent pas.";
@@ -545,8 +551,14 @@ function handleResetPasswordSubmit($utilisateur) {
 
     if ($user) {
         // Mettre à jour le mot de passe
-        $utilisateur->updatePasswordAfterReset($user['id_utilisateur'], $new_pass);
-        
+        $updated = $utilisateur->updatePasswordAfterReset($user['id_utilisateur'], $new_pass);
+
+        if (!$updated) {
+            $_SESSION['error_login'] = "Une erreur est survenue lors de la mise à jour du mot de passe. Veuillez réessayer.";
+            header("Location: ../View/FrontOffice/reset_password.php?token=$token");
+            exit();
+        }
+
         $_SESSION['success_login'] = "Mot de passe modifié avec succès ! Connectez-vous.";
         header("Location: ../View/FrontOffice/login.php");
         exit();

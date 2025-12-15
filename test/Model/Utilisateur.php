@@ -398,17 +398,28 @@ class Utilisateur {
 
     // 3. Mettre à jour le mot de passe et supprimer le token
     public function updatePasswordAfterReset($id, $newPassword) {
-        $query = "UPDATE Utilisateur 
-                  SET mot_de_passe_hash = :mdp, reset_token = NULL, reset_expires = NULL 
-                  WHERE id_utilisateur = :id";
-        
-        $stmt = $this->conn->prepare($query);
-        
-        $hash = password_hash($newPassword, PASSWORD_BCRYPT);
-        $stmt->bindParam(':mdp', $hash);
-        $stmt->bindParam(':id', $id);
+        try {
+            $query = "UPDATE Utilisateur 
+                      SET mot_de_passe_hash = :mdp, reset_token = NULL, reset_expires = NULL 
+                      WHERE id_utilisateur = :id";
 
-        return $stmt->execute();
+            $stmt = $this->conn->prepare($query);
+
+            $hash = password_hash($newPassword, PASSWORD_BCRYPT);
+            $stmt->bindParam(':mdp', $hash);
+            $stmt->bindParam(':id', $id);
+
+            $ok = $stmt->execute();
+            if (!$ok || $stmt->rowCount() === 0) {
+                error_log('[updatePasswordAfterReset] aucune ligne mise à jour pour id=' . (int)$id);
+                return false;
+            }
+
+            return true;
+        } catch (Exception $e) {
+            error_log('[updatePasswordAfterReset] ' . $e->getMessage());
+            return false;
+        }
     }
     // --- GESTION DES BANNISSEMENTS ---
 

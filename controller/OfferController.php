@@ -136,10 +136,11 @@ class OfferController {
         $id = $_GET['id'];
         
         // ✅ VÉRIFICATION : Charger l'offre et vérifier la propriété
-        if ($this->offerModel->getById($id)) {
-            if ((int)$this->offerModel->org_id !== (int)$_SESSION['user_id']) {
-                die("<div style='text-align:center;margin-top:50px;'><h1 style='color:#E74C3C'>Accès Refusé</h1><p>Vous ne pouvez supprimer que VOS propres offres.</p><a href='index.php?action=list'>Retour</a></div>");
-            }
+        if (!$this->offerModel->getById($id)) {
+            die("Offre introuvable");
+        }
+        if ((int)$this->offerModel->org_id !== (int)$_SESSION['user_id']) {
+            die("<div style='text-align:center;margin-top:50px;'><h1 style='color:#E74C3C'>Accès Refusé</h1><p>Vous ne pouvez supprimer que VOS propres offres.</p><a href='index.php?action=list'>Retour</a></div>");
         }
         
         $this->offerModel->id = $id;
@@ -318,8 +319,9 @@ class OfferController {
                 
                 // 📧 ENVOI EMAIL AUTOMATIQUE PROFESSIONNEL
                 if ($status === 'acceptée') {
-                    // ⭐ TRANSFORMATION CLIENT → EXPERT
-                    $this->transformClientToExpert($appInfo['candidate_id'], $appInfo['candidate_name'], $appInfo['offer_title']);
+                    // ⭐ TRANSFORMATION CLIENT → EXPERT (associer l'organisation qui accepte)
+                    $offerOrgId = (int)$this->offerModel->org_id;
+                    $this->transformClientToExpert($appInfo['candidate_id'], $appInfo['candidate_name'], $appInfo['offer_title'], $offerOrgId);
                     
                     EmailService::sendAcceptanceEmail(
                         $appInfo['candidate_email'], 
@@ -344,8 +346,15 @@ class OfferController {
     }
 
     // ⭐ TRANSFORMATION CLIENT → EXPERT (après acceptation)
-    private function transformClientToExpert($candidate_id, $candidate_name, $offer_title) {
+    private function transformClientToExpert($candidate_id, $candidate_name, $offer_title, $orgId = null) {
         $db = Database::getConnection();
+
+        // S'assurer que la colonne d'association org existe (tolérant aux duplications)
+        try {
+            $db->exec("ALTER TABLE Expert ADD COLUMN organisation_id INT NULL");
+        } catch (Exception $e) {
+            // colonne déjà existante
+        }
         
         // Vérifier si le client n'est pas déjà expert
         $checkStmt = $db->prepare("SELECT id_utilisateur FROM Expert WHERE id_utilisateur = ?");
@@ -353,8 +362,8 @@ class OfferController {
         
         if ($checkStmt->rowCount() == 0) {
             // Créer l'entrée Expert avec la spécialité basée sur l'offre
-            $insertStmt = $db->prepare("INSERT INTO Expert (id_utilisateur, nom_complet, specialite, bio, date_devenu_expert) 
-                                        VALUES (?, ?, ?, ?, NOW())");
+            $insertStmt = $db->prepare("INSERT INTO Expert (id_utilisateur, nom_complet, specialite, bio, organisation_id, date_devenu_expert) 
+                                        VALUES (?, ?, ?, ?, ?, NOW())");
             
             // Récupérer la bio du client
             $clientStmt = $db->prepare("SELECT bio FROM Client WHERE id_utilisateur = ?");
@@ -366,8 +375,12 @@ class OfferController {
                 $candidate_id, 
                 $candidate_name, 
                 $offer_title, // Spécialité = titre de l'offre acceptée
-                $bio
+                $bio,
+                $orgId
             ]);
+        } elseif ($orgId) {
+            $updateStmt = $db->prepare("UPDATE Expert SET organisation_id = :orgId WHERE id_utilisateur = :id AND (organisation_id IS NULL OR organisation_id = 0)");
+            $updateStmt->execute([':orgId' => $orgId, ':id' => $candidate_id]);
         }
     }
 

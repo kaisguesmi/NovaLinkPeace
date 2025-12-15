@@ -2,7 +2,7 @@
 
 if (!function_exists('filter_content')) {
     /**
-     * Filter content for bad words
+     * Filter content for bad words using configured filter when available.
      * @param string $content
      * @return string
      */
@@ -17,3 +17,4 @@ if (!function_exists('filter_content')) {
         return $content;
     }
 }
+

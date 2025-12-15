@@ -124,7 +124,7 @@ class Histoire {
             return $del->execute([$existing['id_reaction']]);
         }
 
-        // replace any other reaction for this user/story
+        // Replace any other reaction for this user/story
         $delOther = $this->conn->prepare("DELETE FROM reaction_histoire WHERE id_histoire = ? AND id_utilisateur = ?");
         $delOther->execute([$idHistoire, $idUser]);
 
