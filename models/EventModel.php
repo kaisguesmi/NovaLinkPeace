@@ -10,7 +10,7 @@ class EventModel
 
         $sql = "SELECT e.*, o.nom_organisation AS organisation_nom
             FROM events e
-            LEFT JOIN organisation o ON o.id_utilisateur = e.created_by
+            LEFT JOIN organisation o ON o.id_utilisateur = e.org_id
             ORDER BY e.date ASC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
@@ -23,7 +23,7 @@ class EventModel
 
         $sql = "SELECT e.*, o.nom_organisation AS organisation_nom
             FROM events e
-            LEFT JOIN organisation o ON o.id_utilisateur = e.created_by
+            LEFT JOIN organisation o ON o.id_utilisateur = e.org_id
             WHERE e.id = :id LIMIT 1";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':id' => $id]);

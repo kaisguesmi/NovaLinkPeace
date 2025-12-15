@@ -1,9 +1,11 @@
 <?php
 // controller/OfferController.php
 
+require_once 'model/Database.php';
 require_once 'model/Offer.php';
 require_once 'model/Application.php';
 require_once 'model/EmailService.php';
+require_once 'model/Utilisateur.php';
 
 // Démarrer la session pour gérer les utilisateurs connectés
 if (session_status() === PHP_SESSION_NONE) {
@@ -13,6 +15,7 @@ if (session_status() === PHP_SESSION_NONE) {
 class OfferController {
     private $offerModel;
     private $applicationModel;
+    private $utilisateurModel;
     
     // 🔑 CLÉ API HUGGING FACE (Obligatoire pour la détection IA)
     private $huggingFaceToken = "hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"; 
@@ -20,6 +23,17 @@ class OfferController {
     public function __construct() {
         $this->offerModel = new Offer();
         $this->applicationModel = new Application();
+        $this->utilisateurModel = new Utilisateur((new Database())->getConnection());
+    }
+
+    private function ensureOrgVerified() {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'organisation') {
+            die("Accès interdit : Vous devez être une organisation.");
+        }
+        $org = $this->utilisateurModel->findOrganisationById($_SESSION['user_id']);
+        if (!$org || ($org['statut_verification'] ?? '') !== 'Verifié') {
+            die("Votre organisation n'est pas vérifiée. Contactez l'admin pour valider votre compte avant de publier.");
+        }
     }
     
     // =========================================================
@@ -50,9 +64,7 @@ class OfferController {
 
     public function createOffer() { 
         // Seules les organisations peuvent créer des offres
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
-            die("Accès interdit : Vous devez être une organisation pour créer une offre.");
-        }
+        $this->ensureOrgVerified();
         require 'view/offer_form.php'; 
     }
 
@@ -61,6 +73,7 @@ class OfferController {
             if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organisation') {
                 die("Accès interdit");
             }
+            $this->ensureOrgVerified();
             
             $this->offerModel->org_id = $_SESSION['user_id'];
             $this->offerModel->title = trim($_POST['title']);
@@ -136,10 +149,11 @@ class OfferController {
         $id = $_GET['id'];
         
         // ✅ VÉRIFICATION : Charger l'offre et vérifier la propriété
-        if ($this->offerModel->getById($id)) {
-            if ((int)$this->offerModel->org_id !== (int)$_SESSION['user_id']) {
-                die("<div style='text-align:center;margin-top:50px;'><h1 style='color:#E74C3C'>Accès Refusé</h1><p>Vous ne pouvez supprimer que VOS propres offres.</p><a href='index.php?action=list'>Retour</a></div>");
-            }
+        if (!$this->offerModel->getById($id)) {
+            die("Offre introuvable");
+        }
+        if ((int)$this->offerModel->org_id !== (int)$_SESSION['user_id']) {
+            die("<div style='text-align:center;margin-top:50px;'><h1 style='color:#E74C3C'>Accès Refusé</h1><p>Vous ne pouvez supprimer que VOS propres offres.</p><a href='index.php?action=list'>Retour</a></div>");
         }
         
         $this->offerModel->id = $id;
@@ -318,8 +332,9 @@ class OfferController {
                 
                 // 📧 ENVOI EMAIL AUTOMATIQUE PROFESSIONNEL
                 if ($status === 'acceptée') {
-                    // ⭐ TRANSFORMATION CLIENT → EXPERT
-                    $this->transformClientToExpert($appInfo['candidate_id'], $appInfo['candidate_name'], $appInfo['offer_title']);
+                    // ⭐ TRANSFORMATION CLIENT → EXPERT (enregistré avec l'organisation qui a accepté)
+                    $offerOrgId = (int)$this->offerModel->org_id;
+                    $this->transformClientToExpert($appInfo['candidate_id'], $appInfo['candidate_name'], $appInfo['offer_title'], $offerOrgId);
                     
                     EmailService::sendAcceptanceEmail(
                         $appInfo['candidate_email'], 
@@ -344,8 +359,15 @@ class OfferController {
     }
 
     // ⭐ TRANSFORMATION CLIENT → EXPERT (après acceptation)
-    private function transformClientToExpert($candidate_id, $candidate_name, $offer_title) {
+    private function transformClientToExpert($candidate_id, $candidate_name, $offer_title, $orgId = null) {
         $db = Database::getConnection();
+
+        // S'assurer que la colonne d'association org existe (tolérant aux duplications)
+        try {
+            $db->exec("ALTER TABLE Expert ADD COLUMN organisation_id INT NULL");
+        } catch (Exception $e) {
+            // ignore si déjà présente
+        }
         
         // Vérifier si le client n'est pas déjà expert
         $checkStmt = $db->prepare("SELECT id_utilisateur FROM Expert WHERE id_utilisateur = ?");
@@ -353,8 +375,8 @@ class OfferController {
         
         if ($checkStmt->rowCount() == 0) {
             // Créer l'entrée Expert avec la spécialité basée sur l'offre
-            $insertStmt = $db->prepare("INSERT INTO Expert (id_utilisateur, nom_complet, specialite, bio, date_devenu_expert) 
-                                        VALUES (?, ?, ?, ?, NOW())");
+            $insertStmt = $db->prepare("INSERT INTO Expert (id_utilisateur, nom_complet, specialite, bio, organisation_id, date_devenu_expert) 
+                                        VALUES (?, ?, ?, ?, ?, NOW())");
             
             // Récupérer la bio du client
             $clientStmt = $db->prepare("SELECT bio FROM Client WHERE id_utilisateur = ?");
@@ -366,8 +388,13 @@ class OfferController {
                 $candidate_id, 
                 $candidate_name, 
                 $offer_title, // Spécialité = titre de l'offre acceptée
-                $bio
+                $bio,
+                $orgId
             ]);
+        } elseif ($orgId) {
+            // Mettre à jour l'association organisation si manquante
+            $updateStmt = $db->prepare("UPDATE Expert SET organisation_id = :orgId WHERE id_utilisateur = :id AND (organisation_id IS NULL OR organisation_id = 0)");
+            $updateStmt->execute([':orgId' => $orgId, ':id' => $candidate_id]);
         }
     }
 

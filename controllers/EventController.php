@@ -7,9 +7,37 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../models/EventModel.php';
 require_once __DIR__ . '/../models/ParticipationModel.php';
+require_once __DIR__ . '/../model/Database.php';
+require_once __DIR__ . '/../model/Utilisateur.php';
 
 class EventController
 {
+    private static function organisationIsVerified($orgId)
+    {
+        $utilisateurModel = new Utilisateur((new Database())->getConnection());
+        $organisation = $utilisateurModel->findOrganisationById($orgId);
+
+        return $organisation && ($organisation['statut_verification'] ?? '') === 'Verifié';
+    }
+
+    private static function resolveOrgIdForCreator($userId, $role)
+    {
+        $db = (new Database())->getConnection();
+
+        if ($role === 'organisation') {
+            return (int)$userId;
+        }
+
+        if ($role === 'expert') {
+            $stmt = $db->prepare('SELECT organisation_id FROM Expert WHERE id_utilisateur = :uid');
+            $stmt->execute([':uid' => $userId]);
+            $orgId = (int)($stmt->fetchColumn() ?: 0);
+            return $orgId > 0 ? $orgId : null;
+        }
+
+        return null;
+    }
+
     public static function list()
     {
         $events = EventModel::getAllEvents();
@@ -28,6 +56,24 @@ class EventController
         if (!in_array($_SESSION['role'], ['organisation', 'expert', 'admin'], true)) {
             echo json_encode(['success' => false, 'error' => 'Rôle non autorisé pour créer une initiative']);
             return;
+        }
+
+        $orgId = self::resolveOrgIdForCreator($_SESSION['user_id'], $_SESSION['role']);
+
+        if ($_SESSION['role'] === 'organisation' && !self::organisationIsVerified($orgId)) {
+            echo json_encode(['success' => false, 'error' => "Votre organisation n'est pas vérifiée. Contactez l'administrateur pour valider le compte avant de publier."]);
+            return;
+        }
+
+        if ($_SESSION['role'] === 'expert') {
+            if (!$orgId) {
+                echo json_encode(['success' => false, 'error' => "Aucune organisation associée à cet expert. Demandez à l'organisation de vous lier avant de publier."]);
+                return;
+            }
+            if (!self::organisationIsVerified($orgId)) {
+                echo json_encode(['success' => false, 'error' => "L'organisation associée n'est pas vérifiée. Contactez l'administrateur pour la valider."]);
+                return;
+            }
         }
 
         $input = json_decode(file_get_contents("php://input"), true);
@@ -72,7 +118,7 @@ class EventController
             'capacity'    => (int)$capacity,
             'description' => $description,
             'created_by'  => $creatorId,
-            'org_id'      => $creatorId
+            'org_id'      => $orgId ?: $creatorId
         ];
 
         $ok = EventModel::createEvent($data);
