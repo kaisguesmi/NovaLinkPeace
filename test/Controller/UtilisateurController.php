@@ -136,12 +136,8 @@ function handleRegister($utilisateur) {
         $_SESSION['success_message'] = "Bienvenue ! Votre compte a été créé avec succès.";
 
         // --- REDIRECTION INTELLIGENTE ---
-        if ($role === 'admin') {
-            header("Location: ../View/BackOffice/backoffice.php");
-        } else {
-            // Client et Organisation vont sur l'accueil
-            header("Location: ../View/FrontOffice/index.php");
-        }
+        // Tous les rôles restent sur la page principale après inscription
+        header("Location: ../View/FrontOffice/index.php");
         exit();
 
     } else {
@@ -169,7 +165,8 @@ function handleLogin($utilisateur) {
         $_SESSION['email'] = $adminFound['email'];
         $_SESSION['role'] = 'admin';
         $_SESSION['username'] = 'Administrateur';
-        header("Location: ../View/BackOffice/backoffice.php");
+        // Rester sur la page principale
+        header("Location: ../View/FrontOffice/index.php");
         exit();
     }
 
