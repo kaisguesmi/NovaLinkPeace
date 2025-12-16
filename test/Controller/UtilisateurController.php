@@ -3,7 +3,6 @@ session_start();
 
 include_once __DIR__ . '/../Model/Database.php';
 include_once __DIR__ . '/../Model/Utilisateur.php';
-include_once __DIR__ . '/../View/uploads/';
 
 // Initialisation
 $database = new Database();
@@ -66,6 +65,14 @@ switch ($action) {
         break;
     case 'admin_unban_user':
         handleAdminUnbanUser($utilisateur);
+        break;
+    
+    case 'ajax_get_photo':
+        handleAjaxGetPhoto($utilisateur, $db);
+        break;
+    
+    case 'login_with_face':
+        handleLoginWithFace($utilisateur, $db);
         break;
 
     default:
@@ -146,12 +153,23 @@ function handleRegister($utilisateur) {
 }
 
 function handleLogin($utilisateur) {
-    $email = $_POST['email'] ?? '';
-    $password = $_POST['mot_de_passe'] ?? '';
+    $email = trim($_POST['email'] ?? '');
+    $password = trim($_POST['mot_de_passe'] ?? '');
 
-    if (empty($email) || empty($password)) {
+    if ($email === '' || $password === '') {
         $_SESSION['error_login'] = "Veuillez remplir tous les champs.";
         header("Location: ../View/FrontOffice/login.php");
+        exit();
+    }
+
+    // --- CAS ADMIN AUTONOME (table admin sans lien utilisateur) ---
+    $adminFound = $utilisateur->findAdminByEmail($email);
+    if ($adminFound && password_verify($password, $adminFound['mot_de_passe_hash'])) {
+        $_SESSION['user_id'] = $adminFound['id_admin'];
+        $_SESSION['email'] = $adminFound['email'];
+        $_SESSION['role'] = 'admin';
+        $_SESSION['username'] = 'Administrateur';
+        header("Location: ../View/BackOffice/backoffice.php");
         exit();
     }
 
@@ -209,6 +227,11 @@ function handleLogin($utilisateur) {
             $_SESSION['username'] = $orgaDetails['nom_organisation'];
             header("Location: ../View/FrontOffice/index.php"); 
         } 
+        elseif ($role === 'expert') {
+            $expertDetails = $utilisateur->findExpertById($userFound['id_utilisateur']);
+            $_SESSION['username'] = $expertDetails['nom_complet'];
+            header("Location: ../View/FrontOffice/index.php");
+        }
         elseif ($role === 'client') {
             $clientDetails = $utilisateur->findClientById($userFound['id_utilisateur']);
             $_SESSION['username'] = $clientDetails['nom_complet'];
@@ -254,6 +277,14 @@ function handleUpdateProfile($utilisateur) {
             $_SESSION['username'] = $nom_complet;
         }
     } 
+    elseif ($role === 'expert') {
+        $nom_complet = $_POST['nom_complet'] ?? '';
+        $bio = $_POST['bio'] ?? '';
+        $specialite = $_POST['specialite'] ?? '';
+        if ($utilisateur->updateExpert($id, $nom_complet, $bio, $specialite)) {
+            $_SESSION['username'] = $nom_complet;
+        }
+    }
     elseif ($role === 'organisation') {
         $nom_orga = $_POST['nom_organisation'] ?? '';
         $adresse = $_POST['adresse'] ?? '';
@@ -380,6 +411,9 @@ function handleShowPublicProfile($utilisateur) {
     if ($role === 'client') {
         $profileData = $utilisateur->findClientById($id);
         $profileData['role_display'] = 'Client';
+    } elseif ($role === 'expert') {
+        $profileData = $utilisateur->findExpertById($id);
+        $profileData['role_display'] = 'Expert ⭐';
     } elseif ($role === 'organisation') {
         $profileData = $utilisateur->findOrganisationById($id);
         $profileData['role_display'] = 'Organisation';
@@ -457,6 +491,8 @@ function handleAdminUpdateUser($utilisateur) {
 }
 // 1. Traite la demande (Génère le token)
 function handleForgotPasswordRequest($utilisateur) {
+    require_once __DIR__ . '/../../../model/EmailService.php';
+    
     $email = $_POST['email'] ?? '';
 
     // Vérifie si l'email existe
@@ -467,55 +503,29 @@ function handleForgotPasswordRequest($utilisateur) {
         $token = bin2hex(random_bytes(32));
         $utilisateur->setResetToken($email, $token);
 
-        // 2. Préparer le lien (CORRIGÉ ICI)
-        $server = $_SERVER['HTTP_HOST']; 
+        // 2. Préparer le lien
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+        $server = $_SERVER['HTTP_HOST'];
+        $folder = "/integration/NovaLinkPeace/test";
         
-        // C'est ici que j'ai mis le bon nom de ton dossier : "test"
-        $folder = "/test"; 
-        
-        $resetLink = "http://" . $server . $folder . "/View/FrontOffice/reset_password.php?token=" . $token;
+        $resetLink = $protocol . "://" . $server . $folder . "/View/FrontOffice/reset_password.php?token=" . $token;
 
-        // 3. Préparer l'email
-        $to = $email;
-        $subject = "Réinitialisation de votre mot de passe - PeaceLink";
-        
-        $message = "
-        <html>
-        <head>
-          <title>Mot de passe oublié</title>
-        </head>
-        <body>
-          <h2>Bonjour,</h2>
-          <p>Vous avez demandé à réinitialiser votre mot de passe sur PeaceLink.</p>
-          <p>Cliquez sur le lien ci-dessous pour changer votre mot de passe :</p>
-          <p>
-            <a href='$resetLink' style='background-color:#5dade2; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;'>Réinitialiser mon mot de passe</a>
-          </p>
-          <p>Ou copiez ce lien : $resetLink</p>
-          <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
-        </body>
-        </html>
-        ";
+        // 3. Récupérer le nom de l'utilisateur
+        $userName = $user['username'] ?? 'Utilisateur';
 
-        // En-têtes obligatoires
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-        
-        // --- IMPORTANT : METS TON ADRESSE GMAIL ICI (Celle du sendmail.ini) ---
-        $headers .= "From: PeaceLink <ton_adresse_gmail_ici@gmail.com>" . "\r\n";
-
-        // 4. Envoyer le mail
-        if (mail($to, $subject, $message, $headers)) {
-            $_SESSION['info_mail'] = "Un email de réinitialisation a été envoyé à $email. Vérifiez vos spams !";
+        // 4. Envoyer l'email professionnel avec EmailService
+        if (EmailService::sendPasswordResetEmail($email, $userName, $resetLink)) {
+            $_SESSION['info_mail'] = "✅ Un email de réinitialisation a été envoyé à <strong>$email</strong>. Vérifiez votre boîte de réception et vos spams !";
         } else {
-            $_SESSION['info_mail'] = "Erreur technique : L'email n'a pas pu être envoyé. Vérifiez la config XAMPP.";
+            $_SESSION['info_mail'] = "❌ Erreur technique : L'email n'a pas pu être envoyé. Vérifiez la configuration XAMPP.";
         }
         
         header("Location: ../View/FrontOffice/forgot_password.php");
         exit();
 
     } else {
-        $_SESSION['info_mail'] = "Si cet email existe, un lien a été envoyé.";
+        // Pour des raisons de sécurité, on affiche le même message
+        $_SESSION['info_mail'] = "✅ Si cet email existe dans notre système, un lien de réinitialisation a été envoyé.";
         header("Location: ../View/FrontOffice/forgot_password.php");
         exit();
     }
@@ -524,8 +534,14 @@ function handleForgotPasswordRequest($utilisateur) {
 // 2. Traite le changement de mot de passe
 function handleResetPasswordSubmit($utilisateur) {
     $token = $_POST['token'] ?? '';
-    $new_pass = $_POST['new_password'] ?? '';
-    $confirm_pass = $_POST['confirm_password'] ?? '';
+    $new_pass = trim($_POST['new_password'] ?? '');
+    $confirm_pass = trim($_POST['confirm_password'] ?? '');
+
+    if (strlen($new_pass) < 6) {
+        $_SESSION['error_msg'] = "Le mot de passe doit contenir au moins 6 caractères.";
+        header("Location: ../View/FrontOffice/reset_password.php?token=$token");
+        exit();
+    }
 
     if ($new_pass !== $confirm_pass) {
         $_SESSION['error_msg'] = "Les mots de passe ne correspondent pas.";
@@ -538,8 +554,14 @@ function handleResetPasswordSubmit($utilisateur) {
 
     if ($user) {
         // Mettre à jour le mot de passe
-        $utilisateur->updatePasswordAfterReset($user['id_utilisateur'], $new_pass);
-        
+        $updated = $utilisateur->updatePasswordAfterReset($user['id_utilisateur'], $new_pass);
+
+        if (!$updated) {
+            $_SESSION['error_login'] = "Une erreur est survenue lors de la mise à jour du mot de passe. Veuillez réessayer.";
+            header("Location: ../View/FrontOffice/reset_password.php?token=$token");
+            exit();
+        }
+
         $_SESSION['success_login'] = "Mot de passe modifié avec succès ! Connectez-vous.";
         header("Location: ../View/FrontOffice/login.php");
         exit();
@@ -597,5 +619,233 @@ function handleAdminUnbanUser($utilisateur) {
 
     header("Location: ../View/BackOffice/backoffice.php");
     exit();
+}
+
+// =========================================================
+// 🎭 GESTION FACE ID
+// =========================================================
+
+/**
+ * Récupère la photo de profil d'un utilisateur pour Face ID
+ * Retourne JSON avec le chemin de la photo
+ */
+function handleAjaxGetPhoto($utilisateur, $db) {
+    // Vider tous les buffers existants
+    while (ob_get_level()) ob_end_clean();
+    
+    // Désactiver l'affichage des erreurs
+    ini_set('display_errors', 0);
+    error_reporting(E_ALL);
+    
+    // Log pour débogage
+    error_log("=== AJAX GET PHOTO ===");
+    error_log("POST data: " . print_r($_POST, true));
+    
+    try {
+        header('Content-Type: application/json');
+
+        $email = trim($_POST['email'] ?? '');
+        $adminPhotoFilename = 'admin_face_id.jpg'; // fichier attendu dans View/uploads
+
+        if (empty($email)) {
+            echo json_encode(['success' => false, 'message' => 'Email requis']);
+            exit();
+        }
+
+        // Identifier le compte (Utilisateur ou Admin autonome)
+        $role = null;
+        $userId = null;
+        $photoFile = null;
+        $displayName = null;
+
+        $user = $utilisateur->findByEmail($email);
+        if ($user) {
+            $userId = (int) $user['id_utilisateur'];
+            $role = $utilisateur->getUserRole($userId);
+        } else {
+            $admin = $utilisateur->findAdminByEmail($email);
+            if ($admin) {
+                $role = 'admin';
+                $userId = (int) $admin['id_admin'];
+            }
+        }
+
+        if (!$role) {
+            echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable']);
+            exit();
+        }
+
+        // Autoriser clients, experts et administrateurs
+        if (!in_array($role, ['client', 'expert', 'admin'], true)) {
+            echo json_encode(['success' => false, 'message' => 'Face ID disponible pour les clients, experts et administrateurs']);
+            exit();
+        }
+
+        // Récupérer la photo selon le rôle
+        if ($role === 'admin') {
+            $photoFile = $adminPhotoFilename;
+            $displayName = 'Administrateur';
+        } elseif ($role === 'expert') {
+            $stmt = $db->prepare("
+                SELECT u.photo_profil, e.nom_complet AS display_name
+                FROM Utilisateur u
+                JOIN Expert e ON u.id_utilisateur = e.id_utilisateur
+                WHERE u.id_utilisateur = ?
+            ");
+            $stmt->execute([$userId]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userData || empty($userData['photo_profil'])) {
+                echo json_encode(['success' => false, 'message' => 'Aucune photo de profil trouvée pour cet expert.']);
+                exit();
+            }
+
+            $photoFile = $userData['photo_profil'];
+            $displayName = $userData['display_name'] ?? $email;
+        } else { // client par défaut
+            $stmt = $db->prepare("
+                SELECT u.photo_profil, c.nom_complet AS display_name
+                FROM Utilisateur u
+                JOIN Client c ON u.id_utilisateur = c.id_utilisateur
+                WHERE u.id_utilisateur = ?
+            ");
+            $stmt->execute([$userId]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userData || empty($userData['photo_profil'])) {
+                echo json_encode(['success' => false, 'message' => 'Aucune photo de profil trouvée. Veuillez ajouter une photo dans votre profil.']);
+                exit();
+            }
+
+            $photoFile = $userData['photo_profil'];
+            $displayName = $userData['display_name'] ?? $email;
+        }
+
+        // Vérifier que le fichier existe
+        $photoPath = __DIR__ . '/../View/uploads/' . $photoFile;
+        error_log("Chemin photo: " . $photoPath);
+        error_log("Fichier existe: " . (file_exists($photoPath) ? 'OUI' : 'NON'));
+
+        if (!file_exists($photoPath)) {
+            $message = ($role === 'admin')
+                ? 'Photo Face ID admin introuvable dans View/uploads (' . $photoFile . ').'
+                : 'Fichier photo introuvable';
+            echo json_encode(['success' => false, 'message' => $message]);
+            exit();
+        }
+
+        echo json_encode([
+            'success' => true,
+            'photo' => $photoFile,
+            'nom_complet' => $displayName
+        ]);
+        exit();
+        
+    } catch (Exception $e) {
+        error_log("Exception dans handleAjaxGetPhoto: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Erreur serveur: ' . $e->getMessage()]);
+        exit();
+    }
+}
+
+/**
+ * Connexion avec Face ID après reconnaissance faciale réussie
+ */
+function handleLoginWithFace($utilisateur, $db) {
+    // Vider tous les buffers existants et en démarrer un nouveau
+    while (ob_get_level()) ob_end_clean();
+    
+    // Désactiver l'affichage des erreurs (elles iront dans error_log)
+    ini_set('display_errors', 0);
+    error_reporting(E_ALL);
+    
+    error_log("=== LOGIN WITH FACE ===");
+    error_log("POST data: " . print_r($_POST, true));
+    
+    try {
+        header('Content-Type: application/json');
+
+        $email = trim($_POST['email'] ?? '');
+
+        if (empty($email)) {
+            error_log("Erreur: Email vide");
+            echo json_encode(['success' => false, 'message' => 'Email requis']);
+            exit();
+        }
+
+        // Identifier le compte (Utilisateur ou Admin autonome)
+        $role = null;
+        $userId = null;
+        $username = null;
+
+        $user = $utilisateur->findByEmail($email);
+        if ($user) {
+            $userId = (int) $user['id_utilisateur'];
+            $role = $utilisateur->getUserRole($userId);
+            error_log("Utilisateur trouvé: ID " . $userId . " | rôle " . $role);
+        } else {
+            $admin = $utilisateur->findAdminByEmail($email);
+            if ($admin) {
+                $role = 'admin';
+                $userId = (int) $admin['id_admin'];
+                error_log("Compte admin autonome trouvé: ID " . $userId);
+            }
+        }
+
+        if (!$role) {
+            error_log("Erreur: Utilisateur introuvable pour email: " . $email);
+            echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable']);
+            exit();
+        }
+
+        if (!in_array($role, ['client', 'expert', 'admin'], true)) {
+            error_log("Erreur: Rôle non autorisé pour Face ID: " . $role);
+            echo json_encode(['success' => false, 'message' => 'Face ID disponible pour les clients, experts et administrateurs']);
+            exit();
+        }
+
+        // Préparer les infos de session selon le rôle
+        switch ($role) {
+            case 'expert':
+                $expertDetails = $utilisateur->findExpertById($userId);
+                $username = $expertDetails['nom_complet'] ?? 'Expert';
+                break;
+            case 'client':
+                $clientDetails = $utilisateur->findClientById($userId);
+                $username = $clientDetails['nom_complet'] ?? 'Client';
+                break;
+            case 'admin':
+                $username = 'Administrateur';
+                break;
+        }
+
+        $_SESSION['user_id'] = $userId;
+        $_SESSION['email'] = $email;
+        $_SESSION['role'] = $role;
+        $_SESSION['username'] = $username;
+
+        error_log("Session créée - user_id: " . $_SESSION['user_id']);
+        error_log("Session role: " . $_SESSION['role']);
+
+        // Déterminer la redirection selon le rôle
+        $redirect = "index.php";
+        if ($role === 'admin') {
+            $redirect = "../BackOffice/backoffice.php";
+        }
+
+        error_log("Redirection vers: " . $redirect);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Connexion réussie avec Face ID !',
+            'redirect' => $redirect
+        ]);
+        exit();
+        
+    } catch (Exception $e) {
+        error_log("Exception dans handleLoginWithFace: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Erreur serveur: ' . $e->getMessage()]);
+        exit();
+    }
 }
 ?>

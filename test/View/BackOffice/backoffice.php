@@ -22,6 +22,13 @@ $listeOrganisations = $utilisateur->getAllOrganisations();
 $listeClients = $utilisateur->getAllClients();
 // Récupérer les bannis
 $listeBannis = $utilisateur->getAllBannedUsers();
+$pendingReclamations = 0;
+try {
+    $stmtRec = $db->query("SELECT COUNT(*) FROM reclamation WHERE statut = 'nouvelle'");
+    $pendingReclamations = (int) $stmtRec->fetchColumn();
+} catch (Exception $e) {
+    $pendingReclamations = 0;
+}
 $adminName = $_SESSION['username'] ?? 'Administrateur';
 
 // Gestion des messages de succès/erreur (flash messages)
@@ -54,6 +61,7 @@ if (isset($_SESSION['error_msg'])) {
         .alert { padding: 15px; margin-bottom: 20px; border-radius: 4px; }
         .alert-success { background-color: #d4edda; color: #155724; }
         .alert-danger { background-color: #f8d7da; color: #721c24; }
+        .nav-badge { background:#e74c3c; color:#fff; border-radius:10px; padding:2px 8px; font-size:12px; margin-left:6px; }
     </style>
 </head>
 <body>
@@ -79,6 +87,13 @@ if (isset($_SESSION['error_msg'])) {
             <a href="#clients" class="nav-item">
                 <i class="fa-solid fa-users"></i>
                 <span>Clients</span>
+            </a>
+            <a href="reclamations.php" class="nav-item">
+                <i class="fa-solid fa-flag"></i>
+                <span>Reclamations</span>
+                <?php if ($pendingReclamations > 0): ?>
+                    <span class="nav-badge"><?php echo $pendingReclamations; ?></span>
+                <?php endif; ?>
             </a>
              <a href="#banned" class="nav-item">
                 <i class="fa-solid fa-user-slash"></i> <!-- Icône utilisateur barré -->

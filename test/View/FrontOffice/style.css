@@ -4,6 +4,7 @@
 :root {
     --bleu-pastel: #5DADE2;
     --vert-doux: #7BD389;
+    --vert-expert: #2ecc71;
     --orange-chaud: #F4A261;
     --blanc-pur: #FFFFFF;
     --gris-clair: #f4f6f9;
@@ -69,7 +70,7 @@ a { text-decoration: none; color: inherit; }
 .page-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 30px; }
 .page-header h1 { font-family: var(--font-titre); font-size: 28px; color: var(--bleu-nuit); }
 .page-subtitle { color: #888; }
-.btn, .btn-primary, .btn-secondary { padding: 10px 20px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
+.btn, .btn-primary { padding: 10px 20px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
 .btn-primary { background-color: var(--bleu-pastel); color: var(--blanc-pur); }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(93, 173, 226, 0.4); }
 .btn-secondary { background-color: var(--gris-moyen); color: var(--gris-fonce); }
@@ -164,6 +165,38 @@ a { text-decoration: none; color: inherit; }
 @media (max-width: 768px) {
     .content-wrapper { padding: 15px; }
     .page-header { flex-direction: column; align-items: flex-start; }
+    
+    /* Responsive Navbar */
+    .main-navbar {
+        height: auto;
+        padding: 10px 20px;
+    }
+    
+    .navbar-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .search-bar-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+    }
+    
+    .navbar-links ul {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+    }
+    
+    .nav-link {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    .nav-link i {
+        font-size: 11px;
+    }
 }
 
 /* --- 12. Styles Front Office --- (MODIFIÉ) --- */
@@ -210,17 +243,19 @@ a { text-decoration: none; color: inherit; }
     list-style: none;
     display: flex;
     align-items: center;
-    gap: 30px;
+    gap: 8px; /* Réduit pour compacter les liens */
 }
 
 .nav-link {
     font-family: var(--font-texte);
     font-weight: 600;
-    font-size: 16px;
+    font-size: 14px; /* Réduit de 16px à 14px */
     color: var(--gris-fonce);
-    padding: 10px 5px;
+    padding: 8px 12px; /* Réduit le padding */
     position: relative;
     transition: color var(--transition-speed);
+    white-space: nowrap; /* Empêche le retour à la ligne */
+    border-radius: 6px;
 }
 
 .nav-link::after {
@@ -234,15 +269,25 @@ a { text-decoration: none; color: inherit; }
     transition: width var(--transition-speed);
 }
 
-.nav-link:hover, .nav-link.active { color: var(--bleu-pastel); }
+.nav-link:hover, .nav-link.active { 
+    color: var(--bleu-pastel);
+    background-color: rgba(93, 173, 226, 0.08);
+}
 .nav-link:hover::after, .nav-link.active::after { width: 100%; }
+
+/* Style spécial pour les liens avec icônes (Gestion des Offres, Candidatures, etc.) */
+.nav-link i {
+    margin-right: 5px;
+    font-size: 13px;
+}
 
 .btn-join-us {
     background-color: var(--orange-chaud);
     color: var(--blanc-pur);
-    padding: 10px 22px;
+    padding: 8px 16px; /* Réduit pour être cohérent */
     border-radius: var(--border-radius);
     transition: all var(--transition-speed);
+    font-size: 14px;
 }
 
 .btn-join-us:hover {
@@ -251,6 +296,69 @@ a { text-decoration: none; color: inherit; }
     box-shadow: 0 4px 10px rgba(244, 162, 97, 0.4);
 }
 .btn-join-us::after { display: none; }
+
+/* 🔍 Barre de recherche améliorée */
+.search-bar-container {
+    flex-grow: 1;
+    max-width: 400px;
+    margin: 0 20px;
+}
+
+.search-form {
+    position: relative;
+    width: 100%;
+}
+
+.search-form input[type="text"] {
+    width: 100%;
+    padding: 10px 45px 10px 20px;
+    border: 2px solid var(--gris-moyen);
+    border-radius: 25px;
+    font-size: 14px;
+    font-family: var(--font-texte);
+    transition: all var(--transition-speed);
+    background-color: var(--gris-clair);
+}
+
+.search-form input[type="text"]:focus {
+    outline: none;
+    border-color: var(--bleu-pastel);
+    background-color: var(--blanc-pur);
+    box-shadow: 0 0 0 3px rgba(93, 173, 226, 0.1);
+}
+
+.search-form input[type="text"]::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+.search-form button {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--bleu-pastel);
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    color: var(--blanc-pur);
+}
+
+.search-form button:hover {
+    background-color: var(--bleu-nuit);
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 4px 8px rgba(93, 173, 226, 0.3);
+}
+
+.search-form button i {
+    font-size: 14px;
+}
 
 /* -- Section Héros -- */
 .hero-section {
@@ -519,43 +627,3 @@ a { text-decoration: none; color: inherit; }
     line-height: 1.7;
     color: #555;
 }
-/* Search Bar Style */
-.search-bar-container { flex-grow: 1; max-width: 400px; margin: 0 20px; }
-/* Dans View/FrontOffice/style.css */
-
-.search-form {
-    display: flex;
-    align-items: center;
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 50px;
-    padding: 2px;
-    overflow: hidden; /* Coupe ce qui dépasse */
-}
-
-.search-form input[type="text"] {
-    flex-grow: 1;        /* L'input prend l'espace disponible... */
-    width: auto;         /* ...mais reste flexible */
-    border: none;
-    outline: none;
-    padding: 8px 15px;
-    min-width: 0;        /* Important pour Firefox/Chrome */
-}
-
-.search-form button {
-    /* --- C'EST LA LIGNE MAGIQUE --- */
-    flex-shrink: 0;      /* Interdit au bouton de rétrécir */
-    /* ----------------------------- */
-    
-    width: 35px;         /* Force une largeur */
-    height: 35px;        /* Force une hauteur */
-    background-color: #5DADE2; /* Orange (ou ta couleur bleu) */
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.search-form button:hover { background: var(--vert-doux); }

@@ -88,6 +88,15 @@ class Utilisateur {
         return $stmt->fetch(PDO::FETCH_ASSOC); // Renvoie l'utilisateur ou false s'il n'est pas trouvé
     }
 
+    // Recherche d'un admin autonome (table admin sans FK utilisateur)
+    public function findAdminByEmail($email) {
+        $query = "SELECT id_admin, email, mot_de_passe_hash, niveau_permission FROM admin WHERE email = :email LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function findClientById($id) {
         // On ajoute u.date_inscription à la requête SELECT
         $query = "SELECT u.id_utilisateur, u.email, u.date_inscription, u.photo_profil, 
@@ -125,11 +134,37 @@ class Utilisateur {
         }
         return false;
     }
+
+    // ⭐ Mettre à jour les infos d'un Expert
+    public function updateExpert($id, $nom_complet, $bio, $specialite) {
+        $query = "UPDATE Expert SET nom_complet = :nom_complet, bio = :bio, specialite = :specialite WHERE id_utilisateur = :id";
+        
+        $stmt = $this->conn->prepare($query);
+
+        // Nettoyer les données
+        $nom_complet = htmlspecialchars(strip_tags($nom_complet));
+        $bio = htmlspecialchars(strip_tags($bio));
+        $specialite = htmlspecialchars(strip_tags($specialite));
+        $id = htmlspecialchars(strip_tags($id));
+        
+        // Lier les paramètres
+        $stmt->bindParam(':nom_complet', $nom_complet);
+        $stmt->bindParam(':bio', $bio);
+        $stmt->bindParam(':specialite', $specialite);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        // Exécuter
+        if ($stmt->execute()) {
+            return true;
+        }
+        return false;
+    }
+
     // Récupérer le rôle d'un utilisateur connecté
     public function getUserRole($id_utilisateur) {
         // On vérifie dans chaque table spécifique
-        // Est-ce un Admin ?
-        $query = "SELECT id_utilisateur FROM Admin WHERE id_utilisateur = :id";
+        // Est-ce un Admin (table admin autonome : id_admin) ?
+        $query = "SELECT id_admin FROM admin WHERE id_admin = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id_utilisateur);
         $stmt->execute();
@@ -141,6 +176,13 @@ class Utilisateur {
         $stmt->bindParam(':id', $id_utilisateur);
         $stmt->execute();
         if($stmt->rowCount() > 0) return 'organisation';
+
+        // ⭐ Est-ce un Expert ? (priorité sur Client)
+        $query = "SELECT id_utilisateur FROM Expert WHERE id_utilisateur = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id_utilisateur);
+        $stmt->execute();
+        if($stmt->rowCount() > 0) return 'expert';
 
         // Est-ce un Client ?
         $query = "SELECT id_utilisateur FROM Client WHERE id_utilisateur = :id";
@@ -166,6 +208,22 @@ class Utilisateur {
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    // ⭐ Récupérer toutes les infos d'un Expert
+    public function findExpertById($id) {
+        $query = "SELECT u.id_utilisateur, u.email, u.date_inscription, u.photo_profil, 
+                         e.nom_complet, e.specialite, e.bio, e.date_devenu_expert
+                  FROM Utilisateur u
+                  JOIN Expert e ON u.id_utilisateur = e.id_utilisateur
+                  WHERE u.id_utilisateur = :id";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function updatePhoto($id, $filename) {
         $query = "UPDATE Utilisateur SET photo_profil = :photo WHERE id_utilisateur = :id";
         $stmt = $this->conn->prepare($query);
@@ -340,17 +398,28 @@ class Utilisateur {
 
     // 3. Mettre à jour le mot de passe et supprimer le token
     public function updatePasswordAfterReset($id, $newPassword) {
-        $query = "UPDATE Utilisateur 
-                  SET mot_de_passe_hash = :mdp, reset_token = NULL, reset_expires = NULL 
-                  WHERE id_utilisateur = :id";
-        
-        $stmt = $this->conn->prepare($query);
-        
-        $hash = password_hash($newPassword, PASSWORD_BCRYPT);
-        $stmt->bindParam(':mdp', $hash);
-        $stmt->bindParam(':id', $id);
+        try {
+            $query = "UPDATE Utilisateur 
+                      SET mot_de_passe_hash = :mdp, reset_token = NULL, reset_expires = NULL 
+                      WHERE id_utilisateur = :id";
 
-        return $stmt->execute();
+            $stmt = $this->conn->prepare($query);
+
+            $hash = password_hash($newPassword, PASSWORD_BCRYPT);
+            $stmt->bindParam(':mdp', $hash);
+            $stmt->bindParam(':id', $id);
+
+            $ok = $stmt->execute();
+            if (!$ok || $stmt->rowCount() === 0) {
+                error_log('[updatePasswordAfterReset] aucune ligne mise à jour pour id=' . (int)$id);
+                return false;
+            }
+
+            return true;
+        } catch (Exception $e) {
+            error_log('[updatePasswordAfterReset] ' . $e->getMessage());
+            return false;
+        }
     }
     // --- GESTION DES BANNISSEMENTS ---
 

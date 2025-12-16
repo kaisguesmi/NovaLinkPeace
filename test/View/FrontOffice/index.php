@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PeaceLink - Connect. Act. Inspire.</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -22,7 +22,7 @@
                 <ul>
                     <li><a href="#" class="nav-link active">Home</a></li>
                     <li><a href="#" class="nav-link">Stories</a></li>
-                    <li><a href="#" class="nav-link">Initiatives</a></li>
+                    <li><a href="../views/initiatives.php" class="nav-link">Initiatives</a></li>
                     <li><a href="#" class="nav-link btn-join-us">Join Us</a></li>
                 </ul>
             </nav>
