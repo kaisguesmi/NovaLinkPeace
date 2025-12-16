@@ -49,20 +49,31 @@ if (session_status() === PHP_SESSION_NONE) {
                         </a></li>
                         <li><a href="profile.php" class="nav-link">Profile</a></li>
                     <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'expert'): ?>
-                        <!-- CAS EXPERT : Dashboard Expert + Offres -->
-                        <li><a href="/integration/NovaLinkPeace/PeaceLink_Expert_Dashboard/index.html" class="nav-link" style="color: var(--vert-expert); font-weight: bold;">
-                            <i class="fa-solid fa-star"></i> Dashboard Expert
-                        </a></li>
+                        <!-- CAS EXPERT : Offres + Messages -->
                         <li><a href="/integration/index.php?action=list" class="nav-link" style="color: var(--bleu-pastel); font-weight: bold;">
                             <i class="fa-solid fa-briefcase"></i> Offres
+                        </a></li>
+                        <li><a href="/integration/test/Controller/MessageController.php?action=expert_conversations" class="nav-link" style="color: #28a745;">
+                            <i class="fa-solid fa-comments"></i> Messages
                         </a></li>
                         <li><a href="/integration/NovaLinkPeace/test/View/FrontOffice/profile.php" class="nav-link">Profile</a></li>
                     <?php else: ?>
-                        <!-- CAS CLIENT : Lien vers les offres disponibles -->
+                        <!-- CAS CLIENT : Lien vers les offres disponibles + Messages si contacté -->
                         <li><a href="/integration/index.php?action=list" class="nav-link" style="color: var(--bleu-pastel); font-weight: bold;">
                             <i class="fa-solid fa-briefcase"></i> Offres
                         </a></li>
                         <li><a href="/integration/NovaLinkPeace/test/View/FrontOffice/profile.php" class="nav-link">Profile</a></li>
+                        
+                        <!-- Badge Messages pour client (s'affiche seulement si messages reçus) -->
+                        <li class="messages-nav-item" style="position: relative;">
+                            <a href="/integration/test/Controller/MessageController.php?action=client_conversations" 
+                               class="nav-link messages-link" 
+                               id="clientMessagesLink"
+                               style="color: #28a745; display: none;">
+                                <i class="fa-solid fa-envelope"></i> Messages
+                                <span class="messages-badge" id="messagesBadge" style="display: none;"></span>
+                            </a>
+                        </li>
                     <?php endif; ?>
 
                     <li><a href="/integration/NovaLinkPeace/test/Controller/UtilisateurController.php?action=logout" class="nav-link btn-join-us">Logout</a></li>
@@ -75,3 +86,5 @@ if (session_status() === PHP_SESSION_NONE) {
         </nav>
     </div>
 </header>
+
+<?php require_once __DIR__ . '/messages_script.php'; ?>
