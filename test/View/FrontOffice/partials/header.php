@@ -49,10 +49,7 @@ if (session_status() === PHP_SESSION_NONE) {
                         </a></li>
                         <li><a href="profile.php" class="nav-link">Profile</a></li>
                     <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'expert'): ?>
-                        <!-- CAS EXPERT : Dashboard Expert + Offres -->
-                        <li><a href="/integration/NovaLinkPeace/PeaceLink_Expert_Dashboard/index.html" class="nav-link" style="color: var(--vert-expert); font-weight: bold;">
-                            <i class="fa-solid fa-star"></i> Dashboard Expert
-                        </a></li>
+                        <!-- CAS EXPERT : Offres -->
                         <li><a href="/integration/index.php?action=list" class="nav-link" style="color: var(--bleu-pastel); font-weight: bold;">
                             <i class="fa-solid fa-briefcase"></i> Offres
                         </a></li>
