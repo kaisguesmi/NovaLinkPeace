@@ -7,8 +7,9 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../models/EventModel.php';
 require_once __DIR__ . '/../models/ParticipationModel.php';
-require_once __DIR__ . '/../../model/Database.php';
-require_once __DIR__ . '/../../model/Utilisateur.php';
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../model/Database.php';
+require_once __DIR__ . '/../model/Utilisateur.php';
 
 class EventController
 {
@@ -121,9 +122,17 @@ class EventController
             'org_id'      => $orgId ?: $creatorId
         ];
 
-        $ok = EventModel::createEvent($data);
-
-        echo json_encode(['success' => $ok]);
+        try {
+            $ok = EventModel::createEvent($data);
+            if ($ok) {
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'error' => 'Erreur lors de la création de l\'initiative']);
+            }
+        } catch (Exception $e) {
+            error_log("Erreur création événement: " . $e->getMessage());
+            echo json_encode(['success' => false, 'error' => 'Erreur serveur: ' . $e->getMessage()]);
+        }
     }
 
 

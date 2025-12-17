@@ -1,6 +1,6 @@
 // ===================== CONFIGURATION GLOBALE =====================
-const API_URL_EVENTS = "../api_events.php";
-const API_URL_PART   = "../api_participations.php";
+const API_URL_EVENTS = "/integration/NovaLinkPeace/api_events.php";
+const API_URL_PART   = "/integration/NovaLinkPeace/api_participations.php";
 
 // ===================== VARIABLES D'ÉTAT =====================
 const sessionInfo = window.PEACELINK_SESSION || {};
@@ -364,7 +364,15 @@ function setupCreateEventForm() {
                     title, category: cat, location: loc, date, capacity: cap, description: desc
                 })
             });
+            
+            if (!res.ok) {
+                console.error("Erreur HTTP:", res.status, res.statusText);
+                if (fb) { fb.textContent = `Erreur serveur (${res.status}). Vérifiez la console.`; fb.style.color = "red"; }
+                return;
+            }
+            
             const r = await res.json();
+            console.log("Réponse API:", r);
 
             if (r.success) {
                 if (fb) { fb.textContent = "Initiative créée (en attente)."; fb.style.color = "green"; }
@@ -376,7 +384,7 @@ function setupCreateEventForm() {
             }
         } catch (err) {
             console.error("Erreur création :", err);
-            if (fb) { fb.textContent = "Erreur réseau."; fb.style.color = "red"; }
+            if (fb) { fb.textContent = "Erreur réseau: " + err.message; fb.style.color = "red"; }
         }
     });
 }

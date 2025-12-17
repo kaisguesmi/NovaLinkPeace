@@ -49,6 +49,111 @@ a {
     color: inherit; 
 }
 
+/* --- 2.b Alertes et messages (flash + toasts) --- */
+.alert {
+    --alert-accent: var(--bleu-pastel);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #e5e7eb;
+    border-left: 5px solid var(--alert-accent);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: #0f172a;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    margin: 12px 0;
+    line-height: 1.5;
+}
+.alert::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    margin-top: 4px;
+    border-radius: 50%;
+    background: var(--alert-accent);
+    box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+}
+.alert strong { color: #0b1c2c; }
+.alert-info { --alert-accent: #3b82f6; background: linear-gradient(135deg, #e8f1ff 0%, #f7f9ff 100%); color: #0f172a; border-color: #d6e4ff; }
+.alert-success { --alert-accent: #22c55e; background: linear-gradient(135deg, #ecfdf3 0%, #f6fef9 100%); color: #064e3b; border-color: #bbf7d0; }
+.alert-warning { --alert-accent: #f59e0b; background: linear-gradient(135deg, #fff7eb 0%, #fffaf3 100%); color: #78350f; border-color: #fde68a; }
+.alert-danger { --alert-accent: #ef4444; background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%); color: #7f1d1d; border-color: #fecdd3; }
+.alert .btn-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #4b5563;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.alert .btn-close:hover { opacity: 1; transform: scale(1.05); }
+.alert.alert-dismissible { padding-right: 12px; }
+
+.toast-stack {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: min(360px, calc(100vw - 24px));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1400;
+    pointer-events: none;
+}
+.toast {
+    --toast-accent: #3b82f6;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-left: 5px solid var(--toast-accent);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: #0f172a;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    box-shadow: 0 14px 40px rgba(15, 23, 42, 0.14);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+    pointer-events: auto;
+}
+.toast.is-visible { opacity: 1; transform: translateY(0); }
+.toast.is-hiding { opacity: 0; transform: translateY(-8px); }
+.toast-dot {
+    width: 10px;
+    height: 10px;
+    margin-top: 4px;
+    border-radius: 50%;
+    background: var(--toast-accent);
+    box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+}
+.toast-content { flex: 1; line-height: 1.45; }
+.toast-close {
+    background: none;
+    border: none;
+    color: #4b5563;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.toast-close:hover { opacity: 1; transform: scale(1.05); }
+.toast-success { --toast-accent: #22c55e; }
+.toast-warning { --toast-accent: #f59e0b; }
+.toast-danger { --toast-accent: #ef4444; }
+.toast-info { --toast-accent: #3b82f6; }
+
+@media (max-width: 768px) {
+    .toast-stack { right: 8px; left: 8px; width: auto; }
+}
+
 /* ... (toutes les sections 3 à 11 de votre CSS restent identiques) ... */
 
 /* --- 3. Layout Principal --- */

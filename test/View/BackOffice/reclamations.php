@@ -77,6 +77,8 @@ unset($_SESSION['success_msg'], $_SESSION['error_msg']);
                             <th>Auteur</th>
                             <th>Histoire</th>
                             <th>Description</th>
+                            <th>AI score</th>
+                            <th>Analyse AI</th>
                             <th>Statut</th>
                             <th>Actions</th>
                         </tr>
@@ -91,6 +93,8 @@ unset($_SESSION['success_msg'], $_SESSION['error_msg']);
                                 <td><?= htmlspecialchars($rec['auteur_nom']) ?></td>
                                 <td><?= htmlspecialchars($rec['histoire_titre'] ?? 'N/A') ?></td>
                                 <td><?= nl2br(htmlspecialchars($rec['description_personnalisee'])) ?></td>
+                                <td><?= $rec['ai_score'] !== null ? htmlspecialchars(number_format((float)$rec['ai_score'], 1)) . ' / 100' : 'N/A' ?></td>
+                                <td><?= htmlspecialchars($rec['ai_analysis'] ?? 'N/A') ?></td>
                                 <td><?= htmlspecialchars($rec['statut']) ?></td>
                                 <td class="actions-cell">
                                     <form action="../../Controller/HistoireController.php" method="POST" style="display:inline-block;">

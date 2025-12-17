@@ -9,6 +9,7 @@ $base = $this->baseUrl();
     <title>PeaceLink - Admin</title>
     <link rel="stylesheet" href="<?= $base ?>/assets/css/backoffice.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pO12Hjv6Yh86g9i9a0Xk5u7i0jGQX+v1Sk2cQ6Cq3aEvs7KqJsteVEh9UpAJZxkd06P88GJEY3E0P4r1XY7T2w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script defer src="<?= $base ?>/assets/js/alerts.js"></script>
 </head>
 <body>
     <?php include __DIR__ . '/../admin/partials/sidebar.php'; ?>

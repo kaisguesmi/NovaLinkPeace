@@ -1,6 +1,21 @@
 <?php
 // api_events.php
 
+// Activer l'affichage des erreurs en développement
+error_reporting(E_ALL);
+ini_set('display_errors', 0);  // Ne pas afficher les erreurs en HTML
+ini_set('log_errors', 1);      // Enregistrer les erreurs dans les logs
+
+// Capturer les erreurs fatales
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    error_log("PHP Error [$errno]: $errstr in $errfile:$errline");
+    if (in_array($errno, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        header("Content-Type: application/json; charset=utf-8");
+        http_response_code(500);
+        die(json_encode(['success' => false, 'error' => 'Erreur serveur interne']));
+    }
+});
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

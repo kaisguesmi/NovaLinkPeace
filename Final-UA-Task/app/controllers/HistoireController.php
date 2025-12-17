@@ -90,9 +90,13 @@ class HistoireController extends Controller
         }
         
         // In anonymous mode, allow viewing any existing story.
+        $reclamationModel = new Reclamation();
+        $reclamationRecap = $reclamationModel->getRecapForStory($id);
+
         $this->view('histoire/show', [
             'story' => $story,
             'user'  => $this->currentUser(),
+            'reclamationRecap' => $reclamationRecap,
         ], 'front');
     }
 

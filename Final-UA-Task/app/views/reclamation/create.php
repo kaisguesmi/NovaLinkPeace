@@ -4,6 +4,7 @@
         <form method="post" action="<?= $this->baseUrl('?controller=reclamation&action=store') ?>" class="form-card" id="reclamation-create-form">
             <input type="hidden" name="id_histoire_cible" value="<?= htmlspecialchars($target['histoire'] ?? '') ?>">
             <input type="hidden" name="id_commentaire_cible" value="<?= htmlspecialchars($target['commentaire'] ?? '') ?>">
+            <input type="text" name="website" value="" style="position:absolute;left:-9999px" tabindex="-1" autocomplete="off">
             <label>Causes
                 <select name="causes[]" multiple>
                     <?php foreach ($causes as $cause): ?>

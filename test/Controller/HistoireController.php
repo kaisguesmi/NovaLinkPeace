@@ -49,6 +49,9 @@ function actionRouter($histoireModel) {
         case 'refuser_reclamation':
             handleRefuserReclamation($histoireModel);
             break;
+        case 'admin_delete_story':
+            handleAdminDeleteStory($histoireModel);
+            break;
         default:
             header('Location: ../View/FrontOffice/histoires.php');
             exit();
@@ -185,6 +188,24 @@ function handleRefuserReclamation($histoireModel) {
     $histoireModel->updateReclamationStatus($idReclamation, 'refusee');
     $_SESSION['success_msg'] = "Réclamation refusée.";
     header('Location: ../View/BackOffice/reclamations.php');
+    exit();
+}
+
+function handleAdminDeleteStory($histoireModel) {
+    ensureAdmin();
+    $idStory = (int)($_POST['id_histoire'] ?? 0);
+    if ($idStory <= 0) {
+        $_SESSION['error_msg'] = "ID histoire invalide.";
+        header('Location: ../View/BackOffice/backoffice.php#stories');
+        exit();
+    }
+
+    $ok = $histoireModel->deleteStory($idStory);
+    $_SESSION[$ok ? 'success_msg' : 'error_msg'] = $ok
+        ? "Histoire supprimée."
+        : "Erreur lors de la suppression.";
+
+    header('Location: ../View/BackOffice/backoffice.php#stories');
     exit();
 }
 

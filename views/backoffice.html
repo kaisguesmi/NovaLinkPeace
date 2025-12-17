@@ -35,6 +35,10 @@
                 <i class="fa-solid fa-users"></i>
                 <span>Participations</span>
             </a>
+            <a href="#" class="nav-item" data-page="stories">
+                <i class="fa-solid fa-book-open"></i>
+                <span>Histoires</span>
+            </a>
             <a href="../test/View/BackOffice/reclamations.php" class="nav-item">
                 <i class="fa-solid fa-flag"></i>
                 <span>Réclamations</span>
@@ -176,6 +180,35 @@
                     </div>
                 </div>
 
+            </section>
+
+            <!-- HISTOIRES -->
+            <section id="page-stories" class="page-content">
+                <div class="page-header">
+                    <h1>Histoires</h1>
+                    <button id="btn-review-stories" class="btn-primary">
+                        <i class="fa-solid fa-eye"></i> Review
+                    </button>
+                </div>
+
+                <div class="table-card">
+                    <h3>Toutes les histoires publiées</h3>
+                    <p id="stories-error" style="color:red; margin:6px 0 10px 0;"></p>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Titre</th>
+                                    <th>Auteur</th>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stories-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
         </main>

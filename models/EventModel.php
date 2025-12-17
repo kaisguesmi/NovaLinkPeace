@@ -54,19 +54,24 @@ class EventModel
                     :status, :created_by, :org_id, NOW()
                 )";
 
-        $stmt = $pdo->prepare($sql);
+        try {
+            $stmt = $pdo->prepare($sql);
 
-        return $stmt->execute([
-            ':title'       => $data['title'],
-            ':category'    => $data['category'],
-            ':location'    => $data['location'],
-            ':date'        => $data['date'],
-            ':capacity'    => $data['capacity'],
-            ':description' => $data['description'],
-            ':status'      => $initialStatus,
-            ':created_by'  => $data['created_by'],
-            ':org_id'      => $data['org_id']
-        ]);
+            return $stmt->execute([
+                ':title'       => $data['title'],
+                ':category'    => $data['category'],
+                ':location'    => $data['location'],
+                ':date'        => $data['date'],
+                ':capacity'    => $data['capacity'],
+                ':description' => $data['description'],
+                ':status'      => $initialStatus,
+                ':created_by'  => $data['created_by'],
+                ':org_id'      => $data['org_id']
+            ]);
+        } catch (PDOException $e) {
+            error_log("Erreur PDO dans createEvent: " . $e->getMessage());
+            throw new Exception($e->getMessage());
+        }
     }
 
     public static function updateStatus($id, $status)

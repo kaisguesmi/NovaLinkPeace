@@ -40,8 +40,12 @@ class Histoire {
         try {
             $this->conn->beginTransaction();
 
-            $stmt = $this->conn->prepare("INSERT INTO reclamation (description_personnalisee, statut, id_auteur, id_histoire_cible) VALUES (?, 'nouvelle', ?, ?)");
-            $stmt->execute([$description, $idAuteur, $idHistoire]);
+            [$aiScore, $aiAnalysis, $aiModel] = $this->scoreReclamation($description, $causes);
+
+            $stmt = $this->conn->prepare(
+                "INSERT INTO reclamation (description_personnalisee, statut, id_auteur, id_histoire_cible, ai_score, ai_analysis, ai_model) VALUES (?, 'nouvelle', ?, ?, ?, ?, ?)"
+            );
+            $stmt->execute([$description, $idAuteur, $idHistoire, $aiScore, $aiAnalysis, $aiModel]);
             $reclamationId = $this->conn->lastInsertId();
 
             if (!empty($causes)) {
@@ -55,12 +59,14 @@ class Histoire {
             return true;
         } catch (Exception $e) {
             $this->conn->rollBack();
+            error_log('Erreur addReclamation: ' . $e->getMessage());
             return false;
         }
     }
 
     public function getAllReclamations() {
         $sql = "SELECT r.id_reclamation, r.description_personnalisee, r.statut, r.id_auteur, r.id_histoire_cible, r.id_commentaire_cible,
+                       r.ai_score, r.ai_analysis, r.ai_model, r.created_at,
                        u.email AS auteur_email, COALESCE(c.nom_complet, u.email) AS auteur_nom,
                        h.titre AS histoire_titre
                 FROM reclamation r
@@ -71,6 +77,46 @@ class Histoire {
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function scoreReclamation(string $description, array $causes): array {
+        $badwords = [];
+        $configPath = __DIR__ . '/../config/badwords.php';
+        if (file_exists($configPath)) {
+            $cfg = require $configPath;
+            if (!empty($cfg['banned_words']) && is_array($cfg['banned_words'])) {
+                $badwords = $cfg['banned_words'];
+            }
+        }
+
+        $lower = mb_strtolower($description);
+        $hits = 0;
+        foreach ($badwords as $word) {
+            if ($word !== '' && mb_stripos($lower, mb_strtolower($word)) !== false) {
+                $hits++;
+            }
+        }
+
+        $score = 20 + ($hits * 15) + (count($causes) * 5);
+        $score = max(0, min(100, $score));
+
+        $analysisParts = [];
+        if ($hits > 0) {
+            $analysisParts[] = $hits . ' terme(s) sensible(s) détecté(s)';
+        }
+        if (!empty($causes)) {
+            $analysisParts[] = 'Causes sélectionnées: ' . count($causes);
+        }
+
+        $excerpt = mb_substr($description, 0, 140);
+        if (mb_strlen($description) > 140) {
+            $excerpt .= '...';
+        }
+        $analysisParts[] = 'Extrait: "' . $excerpt . '"';
+
+        $analysis = implode(' | ', $analysisParts);
+
+        return [(float)$score, $analysis, 'heuristic-v1'];
     }
 
     public function getReclamation($idReclamation) {

@@ -14,6 +14,15 @@ $base = rtrim($config['app']['base_url'], '/');
         </button>
     </div>
 
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+        <a class="btn-secondary" href="<?= $base ?>/?controller=reclamation&action=received">
+            Voir mes histoires signalées
+        </a>
+        <a class="btn-secondary" href="<?= $base ?>/?controller=reclamation&action=my">
+            Mes réclamations envoyées
+        </a>
+    </div>
+
 <?php if (!empty($toastNotification)): ?>
     <?php
         $toastColor = ($toastNotification['type'] ?? 'success') === 'error'

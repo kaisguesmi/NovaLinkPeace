@@ -8,7 +8,8 @@ $base = $this->baseUrl();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PeaceLink - Stories & Initiatives</title>
-    <link rel="stylesheet" href="/NovaLinkPeace-Jasser-Ouni-task/public/assets/css/front.css">
+    <link rel="stylesheet" href="<?= $base ?>/assets/css/front.css">
+    <script defer src="<?= $base ?>/assets/js/alerts.js"></script>
 
     <!-- Inline styles for Forum Assistant widget to ensure it always floats bottom-right -->
     <style>
@@ -196,6 +197,8 @@ $base = $this->baseUrl();
                     <li><a href="<?= $this->baseUrl('?controller=home&action=index#stories') ?>" class="nav-link" data-section="stories">Stories</a></li>
                     <li><a href="<?= $this->baseUrl('?controller=home&action=index#initiatives') ?>" class="nav-link" data-section="initiatives">Initiatives</a></li>
                     <li><a href="<?= $this->baseUrl('?controller=home&action=index#participations') ?>" class="nav-link" data-section="participations">Participations</a></li>
+                    <li><a href="<?= $this->baseUrl('?controller=reclamation&action=received') ?>" class="nav-link">Histoires signalées</a></li>
+                    <li><a href="<?= $this->baseUrl('?controller=reclamation&action=my') ?>" class="nav-link">Mes réclamations</a></li>
                 </ul>
             </nav>
         </div>

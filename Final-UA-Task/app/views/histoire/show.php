@@ -38,6 +38,53 @@ $base = rtrim($config['app']['base_url'], '/');
         <p style="font-size: 15px; line-height: 1.7; margin-bottom: 25px; white-space: pre-wrap;">
             <?= nl2br(htmlspecialchars($story['contenu'])) ?>
         </p>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px;">
+            <?php if (!empty($reclamationRecap)): ?>
+                <?php
+                    $statusLabelMap = [
+                        'nouvelle' => 'En attente',
+                        'en_cours' => 'En cours',
+                        'resolue' => 'Résolue',
+                        'acceptee' => 'Acceptée',
+                        'refusee' => 'Refusée',
+                    ];
+                    $status = $reclamationRecap['statut'] ?? 'nouvelle';
+                    $statusLabel = $statusLabelMap[$status] ?? $status;
+                    $badgeColor = [
+                        'acceptee' => '#1e88e5',
+                        'resolue' => '#27ae60',
+                        'refusee' => '#e74c3c',
+                        'en_cours' => '#f39c12',
+                        'nouvelle' => '#9b59b6',
+                    ][$status] ?? '#9b59b6';
+                    $count = (int)($reclamationRecap['count_total'] ?? 1);
+                ?>
+                <button type="button" class="btn-secondary" style="border:1px solid #e1e8f0;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;background:#f7f9fc;cursor:default;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;background:<?= $badgeColor ?>;color:#fff;font-weight:700;">
+                        <?= $count ?>
+                    </span>
+                    <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.3;">
+                        <strong style="font-size:14px;">Réclamation<?= $count>1?'s':'' ?> sur cette histoire</strong>
+                        <small style="color:#4b5563;">Dernier statut : <?= htmlspecialchars($statusLabel) ?></small>
+                    </span>
+                </button>
+                <?php if (!empty($reclamationRecap['ai_analysis'])): ?>
+                    <div style="padding:12px 14px;border:1px solid #e1e8f0;border-radius:10px;background:#fff;max-width:340px;">
+                        <div style="font-size:13px;color:#6b7280;margin-bottom:6px;">Analyse AI</div>
+                        <div style="font-size:14px;color:#111827;line-height:1.4;">"<?= htmlspecialchars($reclamationRecap['ai_analysis']) ?>"</div>
+                        <?php if (isset($reclamationRecap['ai_score'])): ?>
+                            <div style="margin-top:6px;font-size:13px;color:#374151;">Score : <?= htmlspecialchars(number_format((float)$reclamationRecap['ai_score'],1)) ?> / 100</div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            <?php else: ?>
+                <button type="button" class="btn-primary" style="border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:default;">
+                    <i class="fa-solid fa-shield-check"></i>
+                    <span>Cette histoire n'a aucune réclamation.</span>
+                </button>
+            <?php endif; ?>
+        </div>
         
         <div style="margin-top: 30px; display: flex; gap: 10px;">
             <a href="<?= $base ?>/?controller=histoire&action=edit&id=<?= $story['id_histoire'] ?>" class="btn-primary">

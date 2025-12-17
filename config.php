@@ -18,5 +18,15 @@ try {
         ]
     );
 } catch (PDOException $e) {
-    die("Erreur de connexion à la base : " . $e->getMessage());
+    error_log("PDO Connection Error: " . $e->getMessage());
+    
+    // Si c'est une requête API, répondre en JSON
+    if (strpos($_SERVER['REQUEST_URI'] ?? '', 'api_') !== false) {
+        header("Content-Type: application/json; charset=utf-8");
+        http_response_code(500);
+        die(json_encode(['success' => false, 'error' => 'Erreur de connexion à la base de données']));
+    }
+    
+    // Sinon, afficher un message d'erreur HTML
+    die("Erreur de connexion à la base de données : " . htmlspecialchars($e->getMessage()));
 }

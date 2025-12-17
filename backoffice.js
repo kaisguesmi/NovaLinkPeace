@@ -3,9 +3,11 @@
  **************************************************/
 const API_EVENTS = "http://localhost/2A4/projet/peacelink/api_events.php";
 const API_PARTICIPATIONS = "http://localhost/2A4/projet/peacelink/api_participations.php";
+const API_STORIES = "http://localhost/2A4/projet/peacelink/api_histoires.php";
 
 let events = [];
 let participations = [];
+let stories = [];
 let openedEditId = null;
 let editingParticipationId = null;
 
@@ -408,6 +410,113 @@ async function deleteParticipation(id) {
 
 
 /**************************************************
+ * HISTOIRES (REVIEW + DELETE)
+ **************************************************/
+async function fetchStories() {
+    const errorBox = document.getElementById("stories-error");
+    if (errorBox) errorBox.textContent = "";
+
+    try {
+        const res = await fetch(API_STORIES + "?action=list");
+        const data = await res.json();
+
+        if (!data.success) {
+            if (errorBox) errorBox.textContent = data.error || "Accès refusé.";
+            renderStoriesTable([]);
+            return;
+        }
+
+        stories = data.stories || [];
+        renderStoriesTable(stories);
+    } catch (err) {
+        console.error("Erreur chargement histoires :", err);
+        if (errorBox) errorBox.textContent = "Erreur réseau lors du chargement.";
+    }
+}
+
+function renderStoriesTable(list = stories) {
+    const tbody = document.getElementById("stories-table-body");
+    if (!tbody) return;
+
+    if (!list.length) {
+        tbody.innerHTML = "<tr><td colspan='5'>Aucune histoire pour le moment.</td></tr>";
+        return;
+    }
+
+    tbody.innerHTML = list.map(story => `
+        <tr id="story-row-${story.id}">
+            <td>${story.titre || ""}</td>
+            <td>${story.auteur_nom || "Inconnu"}</td>
+            <td>${formatDate(story.date_publication)}</td>
+            <td>
+                <span class="status-badge ${story.statut === "publiee" ? "active" : "inactive"}">
+                    ${story.statut || ""}
+                </span>
+            </td>
+            <td class="actions-cell">
+                <button class="action-btn" title="Review" onclick="toggleStoryReview(${story.id})">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+                <button class="action-btn danger" title="Supprimer" onclick="deleteStoryAdmin(${story.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join("");
+}
+
+function toggleStoryReview(id) {
+    const existing = document.getElementById("story-details-" + id);
+    if (existing) {
+        existing.remove();
+        return;
+    }
+
+    const story = stories.find(s => String(s.id) === String(id));
+    const row = document.getElementById("story-row-" + id);
+    if (!story || !row) return;
+
+    const detailRow = document.createElement("tr");
+    detailRow.id = "story-details-" + id;
+    detailRow.innerHTML = `
+        <td colspan="5">
+            <div class="story-detail-box">
+                <div class="story-detail-header">
+                    <h4>${story.titre || "Sans titre"}</h4>
+                    <span>${story.auteur_nom || "Inconnu"} • ${formatDate(story.date_publication)}</span>
+                </div>
+                <p>${(story.contenu || "").replace(/\n/g, "<br>")}</p>
+            </div>
+        </td>`;
+    row.after(detailRow);
+}
+
+async function deleteStoryAdmin(id) {
+    if (!confirm("Supprimer définitivement cette histoire ?")) return;
+
+    try {
+        const res = await fetch(API_STORIES + "?action=delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (!data.success) return alert("Erreur lors de la suppression.");
+        await fetchStories();
+    } catch (err) {
+        console.error("Erreur suppression histoire :", err);
+    }
+}
+
+function setupStoriesUI() {
+    const refreshBtn = document.getElementById("btn-review-stories");
+    if (refreshBtn) {
+        refreshBtn.addEventListener("click", fetchStories);
+    }
+}
+
+
+/**************************************************
  * NAVIGATION
  **************************************************/
 function setupNavigation() {
@@ -416,8 +525,9 @@ function setupNavigation() {
 
     navItems.forEach(item => {
         item.addEventListener("click", (e) => {
-            e.preventDefault();
             const pageName = item.dataset.page;
+            if (!pageName) return; // liens externes : on laisse le comportement par défaut
+            e.preventDefault();
 
             navItems.forEach(n => n.classList.remove("active"));
             item.classList.add("active");
@@ -446,6 +556,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupNavigation();
     setupSidebarToggle();
     setupParticipationUI();
+    setupStoriesUI();
     await fetchEvents();
     await fetchParticipations();
+    await fetchStories();
 });

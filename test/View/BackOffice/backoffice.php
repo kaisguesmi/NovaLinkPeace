@@ -11,15 +11,18 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 // 2. INCLUSIONS
 include_once __DIR__ . '/../../Model/Database.php';
 include_once __DIR__ . '/../../Model/Utilisateur.php';
+include_once __DIR__ . '/../../Model/Histoire.php';
 
 $database = new Database();
 $db = $database->getConnection();
 $utilisateur = new Utilisateur($db);
+$histoireModel = new Histoire($db);
 
 // 3. RÉCUPÉRATION DES DONNÉES
 $stats = $utilisateur->getDashboardStats();
 $listeOrganisations = $utilisateur->getAllOrganisations();
 $listeClients = $utilisateur->getAllClients();
+$listeHistoires = $histoireModel->getAllStories();
 // Récupérer les bannis
 $listeBannis = $utilisateur->getAllBannedUsers();
 $pendingReclamations = 0;
@@ -87,6 +90,10 @@ if (isset($_SESSION['error_msg'])) {
             <a href="#clients" class="nav-item">
                 <i class="fa-solid fa-users"></i>
                 <span>Clients</span>
+            </a>
+            <a href="#stories" class="nav-item">
+                <i class="fa-solid fa-book-open"></i>
+                <span>Histoires</span>
             </a>
             <a href="reclamations.php" class="nav-item">
                 <i class="fa-solid fa-flag"></i>
@@ -280,6 +287,57 @@ if (isset($_SESSION['error_msg'])) {
                             </td>
                             </tr>
                             <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABLEAU 3 : HISTOIRES / REVIEW -->
+            <div class="table-card" id="stories" style="margin-top: 30px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3>Histoires publiées</h3>
+                    <a href="#stories" class="btn-primary" style="padding:8px 16px; text-decoration:none;">Review</a>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Auteur</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($listeHistoires)): ?>
+                                <tr><td colspan="5">Aucune histoire.</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($listeHistoires as $story): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($story['titre']); ?></td>
+                                        <td><?php echo htmlspecialchars($story['auteur_nom'] ?? 'Inconnu'); ?></td>
+                                        <td><?php echo htmlspecialchars($story['date_publication']); ?></td>
+                                        <td>
+                                            <?php if (($story['statut'] ?? '') === 'publiee'): ?>
+                                                <span class="status-verified">Publiée</span>
+                                            <?php else: ?>
+                                                <span class="status-pending"><?php echo htmlspecialchars($story['statut']); ?></span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="actions-cell">
+                                            <button type="button" class="btn-validate" title="Review" onclick="alert('Contenu :\n\n<?php echo addslashes(str_replace(['\r','\n'], ['','\\n'], $story['contenu'] ?? '')); ?>');">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <form action="../../Controller/HistoireController.php" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette histoire ?');">
+                                                <input type="hidden" name="action" value="admin_delete_story">
+                                                <input type="hidden" name="id_histoire" value="<?php echo (int)$story['id_histoire']; ?>">
+                                                <button type="submit" class="btn-delete" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
