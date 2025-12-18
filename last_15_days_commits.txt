@@ -1,0 +1,143 @@
+16f0267 Add Final-UA-Task folder
+ Final-UA-Task/.gitignore                           |   39 +
+ Final-UA-Task/FILES_CREATED.md                     |  163 ++
+ .../View/BackOffice/backoffice.html                |  191 ++
+ .../View/BackOffice/backofficeStyle.css            |  521 ++++++
+ .../NovaInteractive/View/BackOffice/mon-logo.png   |  Bin 0 -> 257779 bytes
+ .../NovaInteractive/View/FrontOffice/index.html    |  125 ++
+ .../NovaInteractive/View/FrontOffice/mon-logo.png  |  Bin 0 -> 257779 bytes
+ .../NovaInteractive/View/FrontOffice/style.css     |  521 ++++++
+ Final-UA-Task/NovaLinkPeace                        |    1 +
+ .../PeaceLink_Expert_Dashboard/index.html          |  452 +++++
+ .../PeaceLink_Expert_Dashboard/logo-peacelink.png  |  Bin 0 -> 1165199 bytes
+ Final-UA-Task/PeaceLink_Expert_Dashboard/script.js |  261 +++
+ Final-UA-Task/PeaceLink_Expert_Dashboard/style.css |  948 ++++++++++
+ Final-UA-Task/README.md                            |    1 +
+ Final-UA-Task/README_POSTS_SYSTEM.md               |  150 ++
+ Final-UA-Task/app/controllers/AdminController.php  |  461 +++++
+ Final-UA-Task/app/controllers/AuthController.php   |   21 +
+ .../app/controllers/CandidatureController.php      |   83 +
+ .../app/controllers/CommentController.php          |  150 ++
+ .../app/controllers/CommentairesController.php     |  118 ++
+ .../app/controllers/DashboardController.php        |   37 +
+ .../app/controllers/HistoireController.php         |  221 +++
+ Final-UA-Task/app/controllers/HomeController.php   |   18 +
+ .../app/controllers/InitiativeController.php       |  203 ++
+ .../app/controllers/ParticipationController.php    |   62 +
+ Final-UA-Task/app/controllers/PostController.php   |  222 +++
+ .../app/controllers/ReclamationController.php      |   93 +
+ Final-UA-Task/app/controllers/UserController.php   |   52 +
+ Final-UA-Task/app/core/Controller.php              |  195 ++
+ Final-UA-Task/app/core/Database.php                |   47 +
+ Final-UA-Task/app/core/Model.php                   |   70 +
+ Final-UA-Task/app/helpers/content_filter.php       |   25 +
+ Final-UA-Task/app/models/Admin.php                 |   12 +
+ Final-UA-Task/app/models/Candidature.php           |   30 +
+ Final-UA-Task/app/models/CauseSignalement.php      |    8 +
+ Final-UA-Task/app/models/Client.php                |   23 +
+ Final-UA-Task/app/models/Commentaire.php           |   60 +
+ Final-UA-Task/app/models/Histoire.php              |  220 +++
+ Final-UA-Task/app/models/Initiative.php            |   22 +
+ Final-UA-Task/app/models/Notifications.php         |  105 ++
+ Final-UA-Task/app/models/Offre.php                 |   17 +
+ Final-UA-Task/app/models/Organisation.php          |    8 +
+ Final-UA-Task/app/models/Participation.php         |   33 +
+ Final-UA-Task/app/models/Post.php                  |  314 ++++
+ Final-UA-Task/app/models/PostComment.php           |  146 ++
+ Final-UA-Task/app/models/Reaction.php              |   66 +
+ Final-UA-Task/app/models/Reclamation.php           |   19 +
+ Final-UA-Task/app/models/ReclamationCause.php      |   21 +
+ Final-UA-Task/app/models/Utilisateur.php           |   19 +
+ Final-UA-Task/app/views/admin/create.php           |   19 +
+ Final-UA-Task/app/views/admin/edit.php             |   20 +
+ Final-UA-Task/app/views/admin/index.php            |  148 ++
+ Final-UA-Task/app/views/admin/moderation.php       |  246 +++
+ Final-UA-Task/app/views/admin/partials/sidebar.php |   38 +
+ Final-UA-Task/app/views/admin/posts.php            |   94 +
+ Final-UA-Task/app/views/admin/reject-story.php     |   32 +
+ Final-UA-Task/app/views/admin/stories.php          |   51 +
+ Final-UA-Task/app/views/auth/edit.php              |   17 +
+ Final-UA-Task/app/views/auth/login.php             |   12 +
+ Final-UA-Task/app/views/auth/profile.php           |   17 +
+ Final-UA-Task/app/views/auth/register.php          |   12 +
+ Final-UA-Task/app/views/candidature/create.php     |   14 +
+ Final-UA-Task/app/views/candidature/edit.php       |   15 +
+ Final-UA-Task/app/views/candidature/index.php      |   41 +
+ Final-UA-Task/app/views/comment/create.php         |   11 +
+ Final-UA-Task/app/views/comment/edit.php           |   11 +
+ Final-UA-Task/app/views/commentaires/create.php    |   12 +
+ Final-UA-Task/app/views/commentaires/edit.php      |   12 +
+ Final-UA-Task/app/views/commentaires/index.php     |   30 +
+ Final-UA-Task/app/views/dashboard/index.php        |  114 ++
+ Final-UA-Task/app/views/histoire/all.php           |   71 +
+ Final-UA-Task/app/views/histoire/create.php        |   45 +
+ Final-UA-Task/app/views/histoire/edit.php          |   46 +
+ Final-UA-Task/app/views/histoire/index.php         |  262 +++
+ Final-UA-Task/app/views/histoire/show.php          |  120 ++
+ Final-UA-Task/app/views/home/index.php             |  260 +++
+ .../app/views/includes/flash_messages.php          |   16 +
+ Final-UA-Task/app/views/includes/footer.php        |   11 +
+ Final-UA-Task/app/views/includes/header.php        |   19 +
+ Final-UA-Task/app/views/initiative/create.php      |   53 +
+ Final-UA-Task/app/views/initiative/edit.php        |   55 +
+ Final-UA-Task/app/views/initiative/index.php       |   56 +
+ Final-UA-Task/app/views/initiative/show.php        |   85 +
+ Final-UA-Task/app/views/layouts/admin_back.php     |   40 +
+ Final-UA-Task/app/views/layouts/back.php           |  Bin 0 -> 9456 bytes
+ Final-UA-Task/app/views/layouts/front.php          |  373 ++++
+ Final-UA-Task/app/views/partials/post-card.php     |  293 +++
+ Final-UA-Task/app/views/participation/index.php    |   27 +
+ Final-UA-Task/app/views/post/create.php            |   53 +
+ Final-UA-Task/app/views/post/edit.php              |   48 +
+ Final-UA-Task/app/views/post/index.php             |   89 +
+ Final-UA-Task/app/views/reclamation/create.php     |   21 +
+ Final-UA-Task/app/views/reclamation/edit.php       |   22 +
+ Final-UA-Task/app/views/reclamation/index.php      |   29 +
+ Final-UA-Task/app/views/user/index.php             |   71 +
+ Final-UA-Task/config/.htaccess                     |    1 +
+ Final-UA-Task/config/badwords.php                  |   49 +
+ Final-UA-Task/database/peacelink.sql               |  642 +++++++
+ Final-UA-Task/public/.htaccess                     |   27 +
+ Final-UA-Task/public/admin.php                     |   55 +
+ Final-UA-Task/public/assets/css/backoffice.css     |  962 ++++++++++
+ Final-UA-Task/public/assets/css/front.css          | 1965 ++++++++++++++++++++
+ .../public/assets/images/icon-account-settings.png |  Bin 0 -> 57921 bytes
+ .../public/assets/images/icon-comment-delete.png   |  Bin 0 -> 10550 bytes
+ .../public/assets/images/icon-comment-edit.png     |  Bin 0 -> 141359 bytes
+ .../public/assets/images/icon-post-delete.png      |  Bin 0 -> 10550 bytes
+ .../public/assets/images/icon-post-edit.png        |  Bin 0 -> 141359 bytes
+ .../public/assets/images/mon-logo-back.png         |  Bin 0 -> 257779 bytes
+ Final-UA-Task/public/assets/images/mon-logo.png    |  Bin 0 -> 257779 bytes
+ Final-UA-Task/public/assets/js/smooth-scroll.js    |  105 ++
+ Final-UA-Task/public/assets/js/validation.js       |  811 ++++++++
+ Final-UA-Task/public/chatbot.php                   |  254 +++
+ Final-UA-Task/public/index.php                     |   55 +
+ 113 files changed, 14631 insertions(+)
+bc776b2 Add files via upload
+ NovaLinkPeace-main (2).zip | Bin 0 -> 889370 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+8f0f811 Add files via upload
+ test/Controller/UtilisateurController.php          | 601 +++++++++++++++++++++
+ test/Model/Database.php                            |  20 +
+ test/Model/Utilisateur.php                         | 426 +++++++++++++++
+ test/View/BackOffice/backoffice.php                | 367 +++++++++++++
+ test/View/BackOffice/backofficeStyle.css           | 556 +++++++++++++++++++
+ test/View/BackOffice/ban_user.php                  |  52 ++
+ test/View/BackOffice/edit_user.php                 |  93 ++++
+ test/View/BackOffice/mon-logo.png                  | Bin 0 -> 257779 bytes
+ test/View/FrontOffice/banned_page.php              | 186 +++++++
+ test/View/FrontOffice/forgot_password.php          | 135 +++++
+ test/View/FrontOffice/index.php                    | 126 +++++
+ test/View/FrontOffice/inscription.php              | 132 +++++
+ test/View/FrontOffice/js/validation.js             | 117 ++++
+ test/View/FrontOffice/login.php                    |  50 ++
+ test/View/FrontOffice/mon-logo.png                 | Bin 0 -> 257779 bytes
+ test/View/FrontOffice/partials/header.php          |  56 ++
+ test/View/FrontOffice/profile.php                  | 215 ++++++++
+ test/View/FrontOffice/public_profile.php           |  93 ++++
+ test/View/FrontOffice/reset_password.php           | 140 +++++
+ test/View/FrontOffice/search_results.php           |  54 ++
+ test/View/FrontOffice/style.css                    | 561 +++++++++++++++++++
+ .../uploads/9f64ca3b914698e54e840c6610a3ac37.jpg   | Bin 0 -> 3784359 bytes
+ .../uploads/c063abca332fa786948fb8f8746dc524.png   | Bin 0 -> 39860 bytes
+ 23 files changed, 3980 insertions(+)
